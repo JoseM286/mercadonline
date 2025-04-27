@@ -17,6 +17,7 @@ cd MercadonLine
 2. Configurar variables de entorno:
 
 ```bash
+cp .env.example .env
 cp backend/.env.example backend/.env
 cp frontend/.env.example frontend/.env
 ```
