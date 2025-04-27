@@ -40,14 +40,15 @@ services:
     build:
       context: ./frontend
       dockerfile: Dockerfile
-    volumes:
-      - ./frontend:/app
-      - /app/node_modules
     ports:
       - "3000:3000"
     environment:
       - VITE_PORT=3000
       - HOST=0.0.0.0
+    command: sh -c "NODE_ENV=development npx vite --port 3000 --host 0.0.0.0"
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
     networks:
       - mercadonline
 
@@ -56,5 +57,15 @@ networks:
 
 volumes:
   mysql_data:
+
+
+
+
+
+
+
+
+
+
 
 
