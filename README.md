@@ -14,20 +14,27 @@ git clone <url-del-repositorio>
 cd MercadonLine
 ```
 
-2. Ejecutar script de verificación de Windows:
+2. Configurar variables de entorno:
+
+```bash
+cp backend/.env.example backend/.env
+cp frontend/.env.example frontend/.env
+```
+
+3. Ejecutar script de verificación de Windows:
 
 ```bash
 chmod +x check-environment.sh
 ./check-environment.sh
 ```
 
-3. Iniciar los servicios:
+4. Iniciar los servicios:
 
 ```bash
 docker-compose up -d
 ```
 
-4. Verificar que todo funciona:
+5. Verificar que todo funciona:
 
 ```bash
 docker-compose ps
