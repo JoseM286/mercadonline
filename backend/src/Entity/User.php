@@ -154,7 +154,7 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
 
     public function eraseCredentials(): void
     {
-        // If you store any temporary, sensitive data on the user, clear it here
+        // Si almaceno datos temporales sensibles en el usuario, los limpio aqui
     }
 
     public function getUserIdentifier(): string
@@ -183,9 +183,9 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     public function removeOrder(Order $order): static
     {
         if ($this->orders->removeElement($order)) {
-            // set the owning side to null (unless already changed)
+            // Establece el lado propietario a null (a menos que ya haya cambiado)
             if ($order->getUser() === $this) {
-                $order->setUser(null);
+                $order->setUser(null); //Si la orden pertenecia a este usuario, se elimina la orden
             }
         }
 
@@ -252,5 +252,3 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
         return $this;
     }
 }
-
-

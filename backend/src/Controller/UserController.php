@@ -13,7 +13,7 @@ use Symfony\Component\PasswordHasher\Hasher\UserPasswordHasherInterface;
 use Symfony\Component\Routing\Annotation\Route;
 use Symfony\Component\Security\Http\Attribute\CurrentUser;
 
-#[Route('/api/users')]
+#[Route('/api/users')] // Ruta base para los endpoints de usuarios
 class UserController extends AbstractController
 {
     public function __construct(
@@ -22,6 +22,7 @@ class UserController extends AbstractController
         private UserPasswordHasherInterface $passwordHasher
     ) {}
 
+    //Endpoint http://localhost:8080/api/users/register
     #[Route('/register', name: 'app_user_register', methods: ['POST'])]
     public function register(Request $request): JsonResponse
     {
@@ -55,18 +56,18 @@ class UserController extends AbstractController
             $user = new User();
             $user->setEmail($data['email']);
             $user->setName($data['name']);
-            
+
             // Hashear la contraseña
             $hashedPassword = $this->passwordHasher->hashPassword(
                 $user,
                 $data['password']
             );
             $user->setPassword($hashedPassword);
-            
+
             // Establecer valores adicionales
             $user->setRole('ROLE_USER');
             $user->setCreatedAt(new \DateTimeImmutable());
-            
+
             // Opcional: establecer dirección y teléfono si se proporcionan
             if (isset($data['address'])) {
                 $user->setAddress($data['address']);
@@ -88,7 +89,6 @@ class UserController extends AbstractController
                     'role' => $user->getRole()
                 ]
             ], Response::HTTP_CREATED);
-
         } catch (\Exception $e) {
             return $this->json([
                 'error' => 'Error al registrar el usuario'
@@ -99,8 +99,28 @@ class UserController extends AbstractController
     #[Route('/login', name: 'app_user_login', methods: ['POST'])]
     public function login(#[CurrentUser] ?User $user): JsonResponse
     {
-        // TODO: Implementar login
-        return $this->json(['message' => 'Not implemented yet'], Response::HTTP_NOT_IMPLEMENTED);
+        if (null === $user) {
+            return $this->json([
+                'error' => 'Credenciales inválidas.'
+            ], Response::HTTP_UNAUTHORIZED);
+        }
+
+        return $this->json([
+            'user' => [
+                'id' => $user->getId(),
+                'email' => $user->getEmail(),
+                'name' => $user->getName(),
+                'role' => $user->getRole(),
+                // No incluimos la contraseña por seguridad
+            ]
+        ]);
+    }
+
+    #[Route('/logout', name: 'app_user_logout', methods: ['POST'])]
+    public function logout(): void
+    {
+        // El logout es manejado por Symfony
+        throw new \Exception('Don\'t forget to activate logout in security.yaml');
     }
 
     #[Route('/profile', name: 'app_user_profile', methods: ['GET'])]
