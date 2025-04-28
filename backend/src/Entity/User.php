@@ -141,6 +141,12 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
         return $this->createdAt;
     }
 
+    public function setCreatedAt(\DateTimeImmutable $createdAt): self
+    {
+        $this->createdAt = $createdAt;
+        return $this;
+    }
+
     public function getRoles(): array
     {
         return [$this->role];
@@ -246,4 +252,5 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
         return $this;
     }
 }
+
 
