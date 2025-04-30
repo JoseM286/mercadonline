@@ -33,8 +33,12 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     #[ORM\Column(length: 20, nullable: true)]
     private ?string $phone = null;
 
+    // Constantes para los roles
+    public const ROLE_USER = 'ROLE_USER';
+    public const ROLE_ADMIN = 'ROLE_ADMIN';
+
     #[ORM\Column(length: 20)]
-    private string $role = 'user';
+    private string $role = self::ROLE_USER;
 
     #[ORM\Column]
     private ?\DateTimeImmutable $createdAt = null;
@@ -132,6 +136,11 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
 
     public function setRole(string $role): self
     {
+        // Validamos que el rol sea uno de los permitidos
+        if (!in_array($role, [self::ROLE_USER, self::ROLE_ADMIN])) {
+            throw new \InvalidArgumentException('Rol no válido');
+        }
+        
         $this->role = $role;
         return $this;
     }
@@ -149,6 +158,7 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
 
     public function getRoles(): array
     {
+        // Devolvemos un array con el rol
         return [$this->role];
     }
 
@@ -251,4 +261,11 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
 
         return $this;
     }
+
+    // Método para verificar si el usuario es admin
+    public function isAdmin(): bool
+    {
+        return $this->role === self::ROLE_ADMIN;
+    }
 }
+

@@ -64,8 +64,24 @@ class UserController extends AbstractController
             );
             $user->setPassword($hashedPassword);
 
-            // Establecer valores adicionales
-            $user->setRole('ROLE_USER');
+            // Verificar si se solicita rol de administrador
+            $requestedAdminRole = isset($data['role']) && $data['role'] === User::ROLE_ADMIN;
+            
+            // Si se solicita rol de administrador, verificar si ya existe algún administrador
+            if ($requestedAdminRole) {
+                $adminExists = $this->userRepository->count(['role' => User::ROLE_ADMIN]) > 0;
+                if ($adminExists) {
+                    // Si ya existe un administrador, asignar rol de usuario normal
+                    $user->setRole(User::ROLE_USER);
+                } else {
+                    // Si no existe ningún administrador, permitir la creación del primer admin
+                    $user->setRole(User::ROLE_ADMIN);
+                }
+            } else {
+                // Si no se solicita rol de administrador, asignar rol de usuario normal
+                $user->setRole(User::ROLE_USER);
+            }
+
             $user->setCreatedAt(new \DateTimeImmutable());
 
             // Opcional: establecer dirección y teléfono si se proporcionan
@@ -248,3 +264,4 @@ class UserController extends AbstractController
         }
     }
 }
+
