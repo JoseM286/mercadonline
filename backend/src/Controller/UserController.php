@@ -117,10 +117,13 @@ class UserController extends AbstractController
     }
 
     #[Route('/logout', name: 'app_user_logout', methods: ['POST'])]
-    public function logout(): void
+    public function logout(): JsonResponse
     {
-        // El logout es manejado por Symfony
-        throw new \Exception('Don\'t forget to activate logout in security.yaml');
+        // El proceso de logout real es manejado por Symfony Security
+        // Solo necesitamos proporcionar una respuesta JSON
+        return $this->json([
+            'message' => 'Sesión cerrada correctamente'
+        ]);
     }
 
     #[Route('/profile', name: 'app_user_profile', methods: ['GET'])]
@@ -173,15 +176,6 @@ class UserController extends AbstractController
                 $user->setPhone($data['phone']);
             }
 
-            // Si se proporciona una nueva contraseña, actualizarla
-            if (isset($data['password']) && !empty($data['password'])) {
-                $hashedPassword = $this->passwordHasher->hashPassword(
-                    $user,
-                    $data['password']
-                );
-                $user->setPassword($hashedPassword);
-            }
-
             // Guardar los cambios
             $this->entityManager->flush();
 
@@ -197,15 +191,60 @@ class UserController extends AbstractController
                     'createdAt' => $user->getCreatedAt()?->format('Y-m-d H:i:s')
                 ]
             ]);
-
         } catch (\Exception $e) {
             return $this->json([
                 'error' => 'Error al actualizar el perfil'
             ], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
+
+    #[Route('/change-password', name: 'app_user_change_password', methods: ['POST'])]
+    public function changePassword(Request $request, #[CurrentUser] ?User $user): JsonResponse
+    {
+        if (null === $user) {
+            return $this->json([
+                'error' => 'Usuario no autenticado'
+            ], Response::HTTP_UNAUTHORIZED);
+        }
+
+        $data = json_decode($request->getContent(), true);
+        if (!isset($data['currentPassword']) || !isset($data['newPassword'])) {
+            return $this->json([
+                'error' => 'Se requiere la contraseña actual y la nueva contraseña'
+            ], Response::HTTP_BAD_REQUEST);
+        }
+
+        // Verificar que la contraseña actual sea correcta
+        if (!$this->passwordHasher->isPasswordValid($user, $data['currentPassword'])) {
+            return $this->json([
+                'error' => 'La contraseña actual no es correcta'
+            ], Response::HTTP_UNAUTHORIZED);
+        }
+
+        // Validar requisitos de la nueva contraseña
+        if (strlen($data['newPassword']) < 4) {
+            return $this->json([
+                'error' => 'La nueva contraseña debe tener al menos 8 caracteres'
+            ], Response::HTTP_BAD_REQUEST);
+        }
+
+        try {
+            // Hashear y guardar la nueva contraseña
+            $hashedPassword = $this->passwordHasher->hashPassword(
+                $user,
+                $data['newPassword']
+            );
+            $user->setPassword($hashedPassword);
+
+            $this->entityManager->flush();
+
+            return $this->json([
+                'message' => 'Contraseña actualizada correctamente'
+            ]);
+        } catch (\Exception $e) {
+            return $this->json([
+                'error' => 'Error al actualizar la contraseña'
+            ], Response::HTTP_INTERNAL_SERVER_ERROR);
+        }
+    }
 }
-
-
-
-
