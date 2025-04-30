@@ -13,7 +13,7 @@ use Symfony\Component\PasswordHasher\Hasher\UserPasswordHasherInterface;
 use Symfony\Component\Routing\Annotation\Route;
 use Symfony\Component\Security\Http\Attribute\CurrentUser;
 
-#[Route('/api/users')] // Ruta base para los endpoints de usuarios
+#[Route('/api/users')]      // Ruta base para los endpoints de usuarios
 class UserController extends AbstractController
 {
     public function __construct(
@@ -126,15 +126,86 @@ class UserController extends AbstractController
     #[Route('/profile', name: 'app_user_profile', methods: ['GET'])]
     public function profile(#[CurrentUser] ?User $user): JsonResponse
     {
-        // TODO: Implementar obtención de perfil
-        return $this->json(['message' => 'Not implemented yet'], Response::HTTP_NOT_IMPLEMENTED);
+        if (null === $user) {
+            return $this->json([
+                'error' => 'Usuario no autenticado'
+            ], Response::HTTP_UNAUTHORIZED);
+        }
+
+        return $this->json([
+            'user' => [
+                'id' => $user->getId(),
+                'email' => $user->getEmail(),
+                'name' => $user->getName(),
+                'role' => $user->getRole(),
+                'address' => $user->getAddress(),
+                'phone' => $user->getPhone(),
+                'createdAt' => $user->getCreatedAt()?->format('Y-m-d H:i:s')
+            ]
+        ], Response::HTTP_OK, [], ['groups' => 'user:read']);
     }
 
     #[Route('/profile', name: 'app_user_profile_update', methods: ['PUT'])]
     public function updateProfile(Request $request, #[CurrentUser] ?User $user): JsonResponse
     {
-        // TODO: Implementar actualización de perfil
-        return $this->json(['message' => 'Not implemented yet'], Response::HTTP_NOT_IMPLEMENTED);
+        if (null === $user) {
+            return $this->json([
+                'error' => 'Usuario no autenticado'
+            ], Response::HTTP_UNAUTHORIZED);
+        }
+
+        $data = json_decode($request->getContent(), true);
+        if (!$data) {
+            return $this->json([
+                'error' => 'Datos JSON inválidos'
+            ], Response::HTTP_BAD_REQUEST);
+        }
+
+        try {
+            // Actualizar solo los campos permitidos
+            if (isset($data['name'])) {
+                $user->setName($data['name']);
+            }
+            if (isset($data['address'])) {
+                $user->setAddress($data['address']);
+            }
+            if (isset($data['phone'])) {
+                $user->setPhone($data['phone']);
+            }
+
+            // Si se proporciona una nueva contraseña, actualizarla
+            if (isset($data['password']) && !empty($data['password'])) {
+                $hashedPassword = $this->passwordHasher->hashPassword(
+                    $user,
+                    $data['password']
+                );
+                $user->setPassword($hashedPassword);
+            }
+
+            // Guardar los cambios
+            $this->entityManager->flush();
+
+            return $this->json([
+                'message' => 'Perfil actualizado correctamente',
+                'user' => [
+                    'id' => $user->getId(),
+                    'email' => $user->getEmail(),
+                    'name' => $user->getName(),
+                    'role' => $user->getRole(),
+                    'address' => $user->getAddress(),
+                    'phone' => $user->getPhone(),
+                    'createdAt' => $user->getCreatedAt()?->format('Y-m-d H:i:s')
+                ]
+            ]);
+
+        } catch (\Exception $e) {
+            return $this->json([
+                'error' => 'Error al actualizar el perfil'
+            ], Response::HTTP_INTERNAL_SERVER_ERROR);
+        }
     }
 }
+
+
+
 
