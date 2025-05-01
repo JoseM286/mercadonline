@@ -23,24 +23,24 @@ class ProductController extends AbstractController
         private CategoryRepository $categoryRepository
     ) {}
 
-    #[Route('', name: 'app_product_list', methods: ['GET'])]
+    #[Route('/list', name: 'app_product_list', methods: ['GET'])]
     public function listProducts(Request $request): JsonResponse
     {
         // Parámetros de paginación
         $page = max(1, $request->query->getInt('page', 1));
         $limit = min(50, $request->query->getInt('limit', 10));
         $offset = ($page - 1) * $limit;
-        
+
         // Filtro por categoría
         $categoryId = $request->query->get('category');
         $criteria = [];
         if ($categoryId) {
             $criteria['category'] = $categoryId;
         }
-        
+
         // Búsqueda por nombre
         $search = $request->query->get('search');
-        
+
         // Obtener productos
         if ($search) {
             $products = $this->productRepository->findByNameLike($search, $limit, $offset, $categoryId);
@@ -49,7 +49,7 @@ class ProductController extends AbstractController
             $products = $this->productRepository->findBy($criteria, ['name' => 'ASC'], $limit, $offset);
             $total = $this->productRepository->count($criteria);
         }
-        
+
         // Formatear respuesta
         $productsData = [];
         foreach ($products as $product) {
@@ -65,7 +65,7 @@ class ProductController extends AbstractController
                 ]
             ];
         }
-        
+
         return $this->json([
             'products' => $productsData,
             'pagination' => [
@@ -76,18 +76,18 @@ class ProductController extends AbstractController
             ]
         ]);
     }
-    
-    #[Route('/{id}', name: 'app_product_show', methods: ['GET'])]
+
+    #[Route('/show/{id}', name: 'app_product_show', methods: ['GET'])]
     public function showProduct(int $id): JsonResponse
     {
         $product = $this->productRepository->find($id);
-        
+
         if (!$product) {
             return $this->json([
                 'error' => 'Producto no encontrado'
             ], Response::HTTP_NOT_FOUND);
         }
-        
+
         return $this->json([
             'product' => [
                 'id' => $product->getId(),
@@ -102,20 +102,20 @@ class ProductController extends AbstractController
             ]
         ]);
     }
-    
-    #[Route('', name: 'app_product_create', methods: ['POST'])]
+
+    #[Route('/create', name: 'app_product_create', methods: ['POST'])]
     #[IsGranted('ROLE_ADMIN')]
     public function createProduct(Request $request): JsonResponse
     {
         $data = json_decode($request->getContent(), true);
-        
+
         // Validar datos
         if (!isset($data['name']) || !isset($data['price']) || !isset($data['stock']) || !isset($data['category_id'])) {
             return $this->json([
                 'error' => 'Los campos name, price, stock y category_id son obligatorios'
             ], Response::HTTP_BAD_REQUEST);
         }
-        
+
         // Verificar categoría
         $category = $this->categoryRepository->find($data['category_id']);
         if (!$category) {
@@ -123,7 +123,7 @@ class ProductController extends AbstractController
                 'error' => 'La categoría no existe'
             ], Response::HTTP_BAD_REQUEST);
         }
-        
+
         try {
             $product = new Product();
             $product->setName($data['name']);
@@ -131,10 +131,10 @@ class ProductController extends AbstractController
             $product->setPrice((string)$data['price']);
             $product->setStock((int)$data['stock']);
             $product->setCategory($category);
-            
+
             $this->entityManager->persist($product);
             $this->entityManager->flush();
-            
+
             return $this->json([
                 'message' => 'Producto creado correctamente',
                 'product' => [
@@ -155,38 +155,38 @@ class ProductController extends AbstractController
             ], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
-    
-    #[Route('/{id}', name: 'app_product_update', methods: ['PUT'])]
+
+    #[Route('/edit/{id}', name: 'app_product_update', methods: ['PUT'])]
     #[IsGranted('ROLE_ADMIN')]
     public function updateProduct(Request $request, int $id): JsonResponse
     {
         $product = $this->productRepository->find($id);
-        
+
         if (!$product) {
             return $this->json([
                 'error' => 'Producto no encontrado'
             ], Response::HTTP_NOT_FOUND);
         }
-        
+
         $data = json_decode($request->getContent(), true);
-        
+
         try {
             if (isset($data['name'])) {
                 $product->setName($data['name']);
             }
-            
+
             if (isset($data['description'])) {
                 $product->setDescription($data['description']);
             }
-            
+
             if (isset($data['price'])) {
                 $product->setPrice((string)$data['price']);
             }
-            
+
             if (isset($data['stock'])) {
                 $product->setStock((int)$data['stock']);
             }
-            
+
             if (isset($data['category_id'])) {
                 $category = $this->categoryRepository->find($data['category_id']);
                 if (!$category) {
@@ -196,9 +196,9 @@ class ProductController extends AbstractController
                 }
                 $product->setCategory($category);
             }
-            
+
             $this->entityManager->flush();
-            
+
             return $this->json([
                 'message' => 'Producto actualizado correctamente',
                 'product' => [
@@ -219,23 +219,23 @@ class ProductController extends AbstractController
             ], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
-    
-    #[Route('/{id}', name: 'app_product_delete', methods: ['DELETE'])]
+
+    #[Route('/delete/{id}', name: 'app_product_delete', methods: ['DELETE'])]
     #[IsGranted('ROLE_ADMIN')]
     public function deleteProduct(int $id): JsonResponse
     {
         $product = $this->productRepository->find($id);
-        
+
         if (!$product) {
             return $this->json([
                 'error' => 'Producto no encontrado'
             ], Response::HTTP_NOT_FOUND);
         }
-        
+
         try {
             $this->entityManager->remove($product);
             $this->entityManager->flush();
-            
+
             return $this->json([
                 'message' => 'Producto eliminado correctamente'
             ]);
