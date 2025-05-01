@@ -16,28 +16,42 @@ class ProductRepository extends ServiceEntityRepository
         parent::__construct($registry, Product::class);
     }
 
-    //    /**
-    //     * @return Product[] Returns an array of Product objects
-    //     */
-    //    public function findByExampleField($value): array
-    //    {
-    //        return $this->createQueryBuilder('p')
-    //            ->andWhere('p.exampleField = :val')
-    //            ->setParameter('val', $value)
-    //            ->orderBy('p.id', 'ASC')
-    //            ->setMaxResults(10)
-    //            ->getQuery()
-    //            ->getResult()
-    //        ;
-    //    }
-
-    //    public function findOneBySomeField($value): ?Product
-    //    {
-    //        return $this->createQueryBuilder('p')
-    //            ->andWhere('p.exampleField = :val')
-    //            ->setParameter('val', $value)
-    //            ->getQuery()
-    //            ->getOneOrNullResult()
-    //        ;
-    //    }
+    /**
+     * Busca productos por nombre (búsqueda parcial)
+     */
+    public function findByNameLike(string $search, int $limit = 10, int $offset = 0, ?int $categoryId = null): array
+    {
+        $qb = $this->createQueryBuilder('p')
+            ->where('p.name LIKE :search')
+            ->setParameter('search', '%' . $search . '%')
+            ->orderBy('p.name', 'ASC')
+            ->setMaxResults($limit)
+            ->setFirstResult($offset);
+            
+        if ($categoryId) {
+            $qb->andWhere('p.category = :categoryId')
+               ->setParameter('categoryId', $categoryId);
+        }
+            
+        return $qb->getQuery()->getResult();
+    }
+    
+    /**
+     * Cuenta productos por nombre (búsqueda parcial)
+     */
+    public function countByNameLike(string $search, ?int $categoryId = null): int
+    {
+        $qb = $this->createQueryBuilder('p')
+            ->select('COUNT(p.id)')
+            ->where('p.name LIKE :search')
+            ->setParameter('search', '%' . $search . '%');
+            
+        if ($categoryId) {
+            $qb->andWhere('p.category = :categoryId')
+               ->setParameter('categoryId', $categoryId);
+        }
+            
+        return (int) $qb->getQuery()->getSingleScalarResult();
+    }
 }
+
