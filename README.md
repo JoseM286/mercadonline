@@ -10,7 +10,7 @@
 1. Clonar el repositorio:
 
 ```bash
-git clone <url-del-repositorio>
+git clone https://github.com/JoseM286/mercadonline.git
 cd MercadonLine
 ```
 
