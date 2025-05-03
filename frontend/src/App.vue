@@ -1,15 +1,6 @@
 <script setup>
 import { RouterLink, RouterView } from 'vue-router'
-import { onMounted } from 'vue'
-import { useAuthStore } from './stores/auth'
 import HelloWorld from './components/HelloWorld.vue'
-
-const authStore = useAuthStore()
-
-// Inicializar el store de autenticación al cargar la app
-onMounted(() => {
-  authStore.initialize()
-})
 </script>
 
 <template>
@@ -22,13 +13,6 @@ onMounted(() => {
       <nav>
         <RouterLink to="/">Home</RouterLink>
         <RouterLink to="/about">About</RouterLink>
-        
-        <!-- Mostrar enlace de login/logout según estado de autenticación -->
-        <template v-if="authStore.isAuthenticated">
-          <RouterLink v-if="authStore.isAdmin" to="/admin">Admin</RouterLink>
-          <a href="#" @click.prevent="authStore.logout">Logout</a>
-        </template>
-        <RouterLink v-else to="/login">Login</RouterLink>
       </nav>
     </div>
   </header>
@@ -99,4 +83,3 @@ nav a:first-of-type {
   }
 }
 </style>
-
