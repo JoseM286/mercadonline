@@ -1,5 +1,6 @@
 <script setup>
 import { RouterView } from 'vue-router'
+import AppFooter from './components/AppFooter.vue'
 </script>
 
 <template>
@@ -17,22 +18,7 @@ import { RouterView } from 'vue-router'
       <RouterView />
     </main>
 
-    <footer class="footer">
-      <div class="footer-container">
-        <div class="footer-left">
-          <router-link to="/sobre-nosotros">Sobre nosotros</router-link>
-        </div>
-        
-        <div class="copyright">
-        <p>&copy; 2025 MercadonLine - Todos los derechos reservados</p>
-      </div>
-        
-        <div class="footer-right">
-          <router-link to="/contacto">Contáctanos</router-link>
-        </div>
-      </div>
-      
-    </footer>
+    <AppFooter />
   </div>
 </template>
 
@@ -41,12 +27,17 @@ import { RouterView } from 'vue-router'
   display: flex;
   flex-direction: column;
   min-height: 100vh;
+  width: 100%;
+  max-width: 100%;
+  margin: 0;
+  padding: 0;
 }
 
 .header {
   padding: var(--spacing-md);
   background-color: var(--color-primary);
   color: white;
+  width: 100%;
 }
 
 .main-nav {
@@ -69,67 +60,10 @@ import { RouterView } from 'vue-router'
 .main-content {
   flex: 1;
   padding: var(--spacing-md);
-}
-
-.footer {
-  background-color: #2c5e1a; /* Verde oscuro */
-  color: white;
-  padding: var(--spacing-md) var(--spacing-lg);
-}
-
-.footer-container {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  max-width: 1200px;
-  margin: 0 auto;
-}
-
-.footer-left, .footer-right, .footer-center {
-  flex: 1;
-}
-
-.footer-center {
-  text-align: center;
-}
-
-.footer-right {
-  text-align: right;
-}
-
-.footer a {
-  color: white;
-  text-decoration: none;
-  transition: opacity 0.3s ease;
-}
-
-.footer a:hover {
-  opacity: 0.8;
-  text-decoration: underline;
-}
-
-.footer h2 {
-  margin: 0;
-  font-size: 1.5rem;
-}
-
-.copyright {
-  text-align: center;
-  border-top: 1px solid rgba(255, 255, 255, 0.2);
-  font-size: 0.9rem;
-}
-
-/* Responsive */
-@media (max-width: 768px) {
-  .footer-container {
-    flex-direction: column;
-    gap: var(--spacing-md);
-  }
-  
-  .footer-left, .footer-center, .footer-right {
-    text-align: center;
-  }
+  width: 100%;
 }
 </style>
+
+
 
 
