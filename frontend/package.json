@@ -4,7 +4,8 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "dev": "vite",
+    "dev": "vite --host 0.0.0.0",
+    "dev:watch": "vite --host 0.0.0.0 --force",
     "build": "vite build",
     "preview": "vite preview",
     "lint": "eslint . --fix",
@@ -27,3 +28,4 @@
     "vite-plugin-vue-devtools": "^7.7.2"
   }
 }
+
