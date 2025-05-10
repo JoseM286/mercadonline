@@ -1,5 +1,25 @@
 <script setup>
-// Importaciones y lógica aquí (se implementará más adelante)
+// Importaciones para la navegación
+import { useRouter } from 'vue-router';
+
+const router = useRouter();
+
+// Funciones de navegación
+const goToHome = () => {
+  router.push('/');
+};
+
+const goToAbout = () => {
+  router.push('/about');
+};
+
+const goToLogin = () => {
+  router.push('/login'); // Asumiendo que esta ruta existirá
+};
+
+const goToCart = () => {
+  router.push('/cart'); // Asumiendo que esta ruta existirá
+};
 </script>
 
 <template>
@@ -7,11 +27,11 @@
     <!-- Franja superior -->
     <div class="top-bar">
       <div class="logo-container">
-        <img src="@/assets/images/logo_verde.png" alt="Logo MercadonLine" class="header-logo" />
+        <img src="@/assets/images/logo_verde.png" alt="Logo MercadonLine" class="header-logo" @click="goToAbout" style="cursor: pointer;" />
       </div>
 
       <div class="logo-container">
-        <h3>Inicio</h3>
+        <h3 @click="goToHome" style="cursor: pointer;">Inicio</h3>
       </div>
       
       <div class="search-container">
@@ -33,13 +53,13 @@
       </div>
       
       <div class="user-actions">
-        <a href="#" class="user-action-link">
+        <a @click="goToLogin" class="user-action-link" style="cursor: pointer;">
           <span class="icon">👤</span>
           <span class="text">Iniciar sesión</span>
         </a>
       </div>
       <div class="user-actions margin-right-50">
-        <a href="#" class="user-action-link">
+        <a @click="goToCart" class="user-action-link" style="cursor: pointer;">
           <span class="icon">🛒</span>
           <span class="text">Mi cesta</span>
         </a>

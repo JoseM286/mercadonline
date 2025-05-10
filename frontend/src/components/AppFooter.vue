@@ -6,7 +6,7 @@ import { computed } from 'vue';
 const route = useRoute();
 
 // Comprobar si estamos en la página de contacto
-const isContactPage = computed(() => route.path === '/contacto');
+const isContactPage = computed(() => route.path === '/contact');
 
 // Función para volver arriba
 const scrollToTop = () => {
@@ -25,7 +25,7 @@ const scrollToTop = () => {
     
     <div class="footer-container">
       <div class="footer-left">
-        <router-link to="/sobre-nosotros">Sobre nosotros</router-link>
+        <router-link to="/about">Sobre nosotros</router-link>
       </div>
       
       <div class="copyright">
@@ -33,7 +33,7 @@ const scrollToTop = () => {
     </div>
       
       <div class="footer-right">
-        <router-link to="/contacto">Contáctanos</router-link>
+        <router-link to="/contact">Contáctanos</router-link>
       </div>
     </div>
     

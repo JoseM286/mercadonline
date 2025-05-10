@@ -12,19 +12,32 @@ const router = createRouter({
       component: HomeView,
     },
     {
-      path: '/sobre-nosotros',
+      path: '/about',
       name: 'about',
       component: AboutView,
     },
     {
-      path: '/contacto',
+      path: '/contact',
       name: 'contact',
       component: ContactView,
+    },
+    {
+      path: '/login',
+      name: 'login',
+      // Usamos lazy loading para esta vista
+      component: () => import('../views/LoginView.vue'),
+    },
+    {
+      path: '/cart',
+      name: 'cart',
+      // Usamos lazy loading para esta vista
+      component: () => import('../views/CartView.vue'),
     },
   ],
 })
 
 export default router
+
 
 
 
