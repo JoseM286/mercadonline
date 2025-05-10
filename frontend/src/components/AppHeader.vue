@@ -9,6 +9,10 @@
       <div class="logo-container">
         <img src="@/assets/images/logo_verde.png" alt="Logo MercadonLine" class="header-logo" />
       </div>
+
+      <div class="logo-container">
+        <h3>Inicio</h3>
+      </div>
       
       <div class="search-container">
         <div class="search-box">
@@ -33,6 +37,8 @@
           <span class="icon">👤</span>
           <span class="text">Iniciar sesión</span>
         </a>
+      </div>
+      <div class="user-actions margin-right-50">
         <a href="#" class="user-action-link">
           <span class="icon">🛒</span>
           <span class="text">Mi cesta</span>
@@ -66,23 +72,25 @@
 /* Franja superior */
 .top-bar {
   display: flex;
-  justify-content: space-between;
+  justify-content: space-around;
   align-items: center;
-  padding: var(--spacing-md) var(--spacing-lg);
+
   background-color: #2c5e1a;
 }
 
 .logo-container {
   flex: 1;
+  margin-left: 30px;
 }
 
 .header-logo {
-  height: 40px;
+  height: 80px;
   width: auto;
+  margin-left: 20px;
 }
 
 .search-container {
-  flex: 3;
+  flex: 7;
   display: flex;
   justify-content: center;
 }
@@ -90,33 +98,36 @@
 .search-box {
   display: flex;
   width: 100%;
-  max-width: 600px;
+  max-width: 1200px;
   border-radius: 4px;
   overflow: hidden;
 }
 
 .search-input {
-  flex: 3;
+  flex: 5;
   padding: var(--spacing-sm);
   border: none;
-  font-size: 1rem;
+  font-size: 1.2rem;
 }
 
 .category-select {
   flex: 2;
   padding: var(--spacing-sm);
+  text-align: center;
   border: none;
   border-left: 1px solid #ddd;
-  font-size: 0.9rem;
+  font-size: 1.3rem;
   background-color: white;
 }
 
 .search-button {
-  padding: var(--spacing-sm) var(--spacing-md);
+  flex: 0.8;
+  padding: 0.7rem var(--spacing-md);
   background-color: #3a7a23;
   color: white;
   border: none;
   font-weight: bold;
+  font-size: 1.3rem;
   cursor: pointer;
   transition: background-color 0.3s ease;
 }
@@ -130,6 +141,10 @@
   display: flex;
   justify-content: flex-end;
   gap: var(--spacing-md);
+}
+
+.margin-right-50{
+  margin-right: 50px;
 }
 
 .user-action-link {
@@ -146,12 +161,12 @@
 }
 
 .icon {
-  font-size: 1.5rem;
+  font-size: 2rem;
   margin-bottom: var(--spacing-xs);
 }
 
 .text {
-  font-size: 0.8rem;
+  font-size: 1rem;
 }
 
 /* Franja inferior - Categorías */
