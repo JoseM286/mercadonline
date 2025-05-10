@@ -32,6 +32,25 @@
           es un derecho fundamental.
         </p>
       </div>
+
+      <div>
+        <h2 class="section-title">Frescura Directa a tu Mesa</h2>
+        <p class="page-intro">
+          Imagina recibir en casa los productos más frescos de la huerta, 
+        el mar y las granjas de Castellón, ¡directamente del productor 
+          a tu puerta! En MercadonLine, acortamos la distancia para que disfrutes 
+          de la calidad y el sabor auténtico sin moverte de casa
+        </p>
+      </div>
+
+      <div>
+        <h2 class="section-title">Calidad y Sostenibilidad en Cada Clic</h2>
+        <p class="page-intro">
+          No solo te ofrecemos productos deliciosos, sino que también priorizamos la sostenibilidad. 
+          Al elegir MercadonLine, apoyas prácticas agrícolas y de producción respetuosas con el medio 
+          ambiente, contribuyendo a un futuro más verde para nuestra comunidad.
+        </p>
+      </div>
       
       <div class="centered-container">
         <div class="section-card-accent">
