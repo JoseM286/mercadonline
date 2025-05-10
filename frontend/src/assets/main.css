@@ -1,4 +1,5 @@
 @import './base.css';
+@import './shared-styles.css';
 
 /* Contenedor principal */
 #app {
@@ -31,5 +32,6 @@ a:hover {
     padding: 0;
   }
 }
+
 
 

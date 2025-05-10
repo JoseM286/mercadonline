@@ -1,0 +1,241 @@
+/* Contenedores principales */
+.page-container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: var(--spacing-lg);
+}
+
+.page-container-narrow {
+  max-width: 800px;
+  margin: 0 auto;
+  padding: var(--spacing-lg);
+}
+
+/* Encabezados de página */
+.page-header {
+  margin-bottom: var(--spacing-xl);
+  padding-bottom: var(--spacing-md);
+  border-bottom: 2px solid #2c5e1a;
+  text-align: center;
+}
+
+.page-header h1 {
+  font-size: 2.5rem;
+  color: #2c5e1a;
+  margin: 0;
+}
+
+.page-header-with-logo {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-lg);
+  border-bottom: 2px solid #2c5e1a;
+  margin-bottom: var(--spacing-xl);
+}
+
+.page-header-with-logo h1 {
+  font-size: 3rem;
+  color: #2c5e1a;
+  margin: 0;
+}
+
+.page-logo {
+  height: 120px;
+  width: auto;
+  margin-left: auto;
+  margin-bottom: 20px;
+}
+
+/* Contenido de página */
+.page-content {
+  display: flex;
+  flex-direction: column;
+
+}
+
+.page-intro {
+  font-size: 1.3rem;
+  margin-bottom: var(--spacing-lg);
+  line-height: 1.6;
+  max-width: 1200px;
+}
+
+.page-intro-centered {
+  font-size: 1.1rem;
+  margin-bottom: var(--spacing-lg);
+  line-height: 1.6;
+  text-align: center;
+  max-width: 800px;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+/* Contenedor centrado para elementos */
+.centered-container {
+  display: flex;
+  justify-content: center;
+  width: 100%;
+}
+
+/* Secciones y tarjetas */
+.section-card {
+  width: 100%;
+  max-width: 600px;
+  padding: var(--spacing-lg);
+  background-color: #f9f9f9;
+  border-radius: 8px;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+}
+
+.section-card-accent {
+  width: 100%;
+  max-width: 600px;
+  padding: var(--spacing-xl);
+  background-color: rgba(44, 94, 26, 0.1);
+  border-radius: 8px;
+}
+
+/* Formularios */
+.form-group {
+  margin-bottom: var(--spacing-md);
+}
+
+textarea{
+  resize: none;
+}
+
+.form-group label {
+  display: block;
+  margin-bottom: var(--spacing-xs);
+  font-weight: bold;
+  color: #333;
+}
+
+.form-group input,
+.form-group textarea {
+  width: 100%;
+  padding: var(--spacing-sm);
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  font-size: 1rem;
+  transition: border-color 0.3s ease;
+}
+
+.form-group input:focus,
+.form-group textarea:focus {
+  border-color: #2c5e1a;
+  outline: none;
+}
+
+/* Botones */
+.primary-button {
+  display: block;
+  width: 100%;
+  padding: var(--spacing-md);
+  margin: var(--spacing-xl);
+  background-color: #2c5e1a;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  font-size: 1.1rem;
+  font-weight: bold;
+  cursor: pointer;
+  transition: background-color 0.3s ease;
+  text-align: center;
+}
+
+.primary-button:hover {
+  background-color: #3a7a23;
+}
+
+.secondary-button {
+  display: inline-block;
+  padding: var(--spacing-sm) var(--spacing-lg);
+  background-color: transparent;
+  color: #2c5e1a;
+  border: 2px solid #2c5e1a;
+  border-radius: 4px;
+  font-weight: bold;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  text-align: center;
+}
+
+.secondary-button:hover {
+  background-color: rgba(44, 94, 26, 0.1);
+}
+
+/* Mensajes de estado */
+.status-message {
+  padding: var(--spacing-sm);
+  margin-bottom: var(--spacing-md);
+  border-radius: 4px;
+  text-align: center;
+}
+
+.error-message {
+  background-color: #ffebee;
+  color: #c62828;
+  border: 1px solid #ef9a9a;
+}
+
+.success-message {
+  background-color: #e8f5e9;
+  color: #2e7d32;
+  border: 1px solid #a5d6a7;
+}
+
+/* Encabezados de sección */
+.section-title {
+  color: #1e4a12;
+  margin-top: var(--spacing-xl);
+  margin-bottom: var(--spacing-md);
+  font-size: 1.8rem;
+  text-align: left;
+}
+
+.section-title-centered {
+  color: #2c5e1a;
+  margin-top: var(--spacing-xl);
+  margin-bottom: var(--spacing-md);
+  font-size: 1.8rem;
+  text-align: center;
+}
+
+.section-subtitle {
+  color: #1e4a12;
+  text-align: center;
+  margin-top: 0;
+  margin-bottom: var(--spacing-xl);
+  font-size: 2rem;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .page-container,
+  .page-container-narrow {
+    padding: var(--spacing-lw);
+  }
+  
+  .page-header-with-logo {
+    flex-direction: column;
+    text-align: center;
+    gap: var(--spacing-md);
+  }
+  
+  .page-header-with-logo h1 {
+    font-size: 2.5rem;
+  }
+  
+  .section-card,
+  .section-card-accent {
+    padding: var(--spacing-md);
+  }
+  
+  .section-title,
+  .section-title-centered {
+    font-size: 1.5rem;
+  }
+}
+
+

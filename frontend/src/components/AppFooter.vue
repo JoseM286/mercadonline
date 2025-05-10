@@ -1,4 +1,13 @@
 <script setup>
+import { useRoute } from 'vue-router';
+import { computed } from 'vue';
+
+// Obtener la ruta actual
+const route = useRoute();
+
+// Comprobar si estamos en la página de contacto
+const isContactPage = computed(() => route.path === '/contacto');
+
 // Función para volver arriba
 const scrollToTop = () => {
   window.scrollTo({
@@ -9,7 +18,7 @@ const scrollToTop = () => {
 </script>
 
 <template>
-    <button class="scroll-top-button" @click="scrollToTop">
+    <button v-if="!isContactPage" class="scroll-top-button" @click="scrollToTop">
       Volver arriba ↑
     </button>
   <footer class="footer">
@@ -110,4 +119,6 @@ const scrollToTop = () => {
   }
 }
 </style>
+
+
 
