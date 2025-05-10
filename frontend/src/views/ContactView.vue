@@ -142,7 +142,7 @@ const handleSubmit = async () => {
             ></textarea>
           </div>
           
-          <button type="submit" class="contact-submit-button">Enviar mensaje</button>
+          <button type="submit" class="contact-submit-button">Enviar</button>
         </form>
       </div>
     </div>
@@ -168,12 +168,14 @@ const handleSubmit = async () => {
 
 .contact-submit-button {
   display: block;
-  width: 100%;
+  width: 40%;
+  margin-left: auto;
+  margin-right: auto;
   padding: var(--spacing-md);
   background-color: #2c5e1a;
   color: white;
   border: none;
-  border-radius: 4px;
+  border-radius: 25px;
   font-size: 1.1rem;
   font-weight: bold;
   cursor: pointer;
