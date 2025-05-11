@@ -2,9 +2,13 @@
 import { ref } from 'vue';
 
 // Variables reactivas para el formulario
-const loginForm = ref({
+const registerForm = ref({
   email: '',
-  password: ''
+  password: '',
+  confirmPassword: '',
+  name: '',
+  address: '',
+  phone: ''
 });
 
 // Variable para mostrar mensajes de estado
@@ -29,8 +33,8 @@ const handleSubmit = async () => {
     isSuccess: false
   };
   
-  // Validar campos
-  if (!loginForm.value.email.trim() || !isValidEmail(loginForm.value.email)) {
+  // Validar campos requeridos
+  if (!registerForm.value.email.trim() || !isValidEmail(registerForm.value.email)) {
     formStatus.value = {
       message: 'Por favor, introduce un correo electrónico válido',
       isError: true
@@ -38,9 +42,17 @@ const handleSubmit = async () => {
     return;
   }
   
-  if (!loginForm.value.password.trim()) {
+  if (!registerForm.value.password.trim()) {
     formStatus.value = {
-      message: 'Por favor, introduce tu contraseña',
+      message: 'Por favor, introduce una contraseña',
+      isError: true
+    };
+    return;
+  }
+  
+  if (registerForm.value.password !== registerForm.value.confirmPassword) {
+    formStatus.value = {
+      message: 'Las contraseñas no coinciden',
       isError: true
     };
     return;
@@ -55,7 +67,7 @@ const handleSubmit = async () => {
     
     // Mostrar mensaje de éxito
     formStatus.value = {
-      message: 'Inicio de sesión exitoso',
+      message: 'Registro exitoso. ¡Bienvenido a MercadonLine!',
       isSuccess: true
     };
     
@@ -65,10 +77,10 @@ const handleSubmit = async () => {
   } catch (error) {
     // Manejar error
     formStatus.value = {
-      message: 'Error al iniciar sesión. Por favor, verifica tus credenciales.',
+      message: 'Error al registrar la cuenta. Por favor, inténtalo de nuevo.',
       isError: true
     };
-    console.error('Error al iniciar sesión:', error);
+    console.error('Error al registrar:', error);
   }
 };
 </script>
@@ -76,13 +88,13 @@ const handleSubmit = async () => {
 <template>
   <div class="page-container-narrow">
     <div class="page-header-with-logo">
-      <h1>Iniciar sesión</h1>
+      <h1>Crear cuenta</h1>
       <img src="@/assets/images/logo_verde.png" alt="Logo MercadonLine" class="page-logo" />
     </div>
     
     <div class="page-content">
       <p class="page-intro-centered">
-        Accede a tu cuenta para gestionar tus pedidos y disfrutar de ofertas exclusivas.
+        Crea tu cuenta en MercadonLine para disfrutar de una experiencia de compra personalizada.
       </p>
       
       <div class="centered-container">
@@ -95,34 +107,79 @@ const handleSubmit = async () => {
             {{ formStatus.message }}
           </div>
           
+          <!-- Campos requeridos -->
           <div class="form-group">
-            <label for="email">Correo electrónico</label>
+            <label for="email">Correo electrónico *</label>
             <input 
               type="email" 
               id="email" 
-              v-model="loginForm.email" 
+              v-model="registerForm.email" 
               placeholder="tu@email.com"
               required
             />
           </div>
           
           <div class="form-group">
-            <label for="password">Contraseña</label>
+            <label for="password">Contraseña *</label>
             <input 
               type="password" 
               id="password" 
-              v-model="loginForm.password" 
+              v-model="registerForm.password" 
               placeholder="Tu contraseña"
               required
             />
           </div>
           
+          <div class="form-group">
+            <label for="confirmPassword">Confirmar contraseña *</label>
+            <input 
+              type="password" 
+              id="confirmPassword" 
+              v-model="registerForm.confirmPassword" 
+              placeholder="Repite tu contraseña"
+              required
+            />
+          </div>
+          
+          <!-- Campos opcionales -->
+          <div class="form-group">
+            <label for="name">Nombre completo</label>
+            <input 
+              type="text" 
+              id="name" 
+              v-model="registerForm.name" 
+              placeholder="Tu nombre y apellidos"
+            />
+          </div>
+          
+          <div class="form-group">
+            <label for="address">Dirección</label>
+            <input 
+              type="text" 
+              id="address" 
+              v-model="registerForm.address" 
+              placeholder="Tu dirección completa"
+            />
+          </div>
+          
+          <div class="form-group">
+            <label for="phone">Teléfono</label>
+            <input 
+              type="tel" 
+              id="phone" 
+              v-model="registerForm.phone" 
+              placeholder="Tu número de teléfono"
+            />
+          </div>
+          
+          <p class="required-fields-note">* Campos obligatorios</p>
+          
           <div class="form-actions">
-            <button type="submit" class="login-button">Iniciar sesión</button>
+            <button type="submit" class="register-button">Crear cuenta</button>
           </div>
           
           <div class="form-footer">
-            <p>¿No tienes cuenta? <router-link to="/register" class="register-link">Regístrate aquí</router-link></p>
+            <p>¿Ya tienes cuenta? <router-link to="/login" class="login-link">Inicia sesión aquí</router-link></p>
           </div>
         </form>
       </div>
@@ -140,7 +197,7 @@ const handleSubmit = async () => {
 .section-card-accent {
   text-align: left;
   width: 100%;
-  max-width: 400px;
+  max-width: 500px;
   padding: var(--spacing-lg);
 }
 
@@ -188,12 +245,19 @@ const handleSubmit = async () => {
   border: 1px solid #a5d6a7;
 }
 
+.required-fields-note {
+  font-size: 0.9rem;
+  color: #666;
+  margin-top: var(--spacing-md);
+  margin-bottom: var(--spacing-md);
+}
+
 .form-actions {
   margin-top: var(--spacing-lg);
   text-align: center;
 }
 
-.login-button {
+.register-button {
   width: 100%;
   padding: var(--spacing-md);
   background-color: #2c5e1a;
@@ -206,7 +270,7 @@ const handleSubmit = async () => {
   transition: background-color 0.3s ease;
 }
 
-.login-button:hover {
+.register-button:hover {
   background-color: #3a7a23;
 }
 
@@ -216,16 +280,13 @@ const handleSubmit = async () => {
   font-size: 0.9rem;
 }
 
-.register-link {
+.login-link {
   color: #2c5e1a;
   text-decoration: none;
   font-weight: bold;
 }
 
-.register-link:hover {
+.login-link:hover {
   text-decoration: underline;
 }
 </style>
-
-
-

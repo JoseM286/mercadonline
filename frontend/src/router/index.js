@@ -28,6 +28,12 @@ const router = createRouter({
       component: () => import('../views/LoginView.vue'),
     },
     {
+      path: '/register',
+      name: 'register',
+      // Usamos lazy loading para esta vista
+      component: () => import('../views/RegisterView.vue'),
+    },
+    {
       path: '/cart',
       name: 'cart',
       // Usamos lazy loading para esta vista
@@ -37,8 +43,5 @@ const router = createRouter({
 })
 
 export default router
-
-
-
 
 

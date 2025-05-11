@@ -1,7 +1,8 @@
 <template>
   <div class="page-container">
-    <div class="page-header">
+    <div class="page-header-with-logo">
       <h1>Mi cesta</h1>
+      <img src="@/assets/images/logo_verde.png" alt="Logo MercadonLine" class="page-logo" />
     </div>
     
     <div class="page-content">

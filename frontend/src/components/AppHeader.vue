@@ -14,11 +14,11 @@ const goToAbout = () => {
 };
 
 const goToLogin = () => {
-  router.push('/login'); // Asumiendo que esta ruta existirá
+  router.push('/login');
 };
 
 const goToCart = () => {
-  router.push('/cart'); // Asumiendo que esta ruta existirá
+  router.push('/cart');
 };
 </script>
 
@@ -252,3 +252,5 @@ const goToCart = () => {
   }
 }
 </style>
+
+
