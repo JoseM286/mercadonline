@@ -1,0 +1,10 @@
+nelmio_cors:
+    defaults:
+        origin_regex: true #Permite usar expresiones regulares para definir los orígenes permitidos
+        allow_origin: ['%env(CORS_ALLOW_ORIGIN)%'] #Usa la variable de entorno CORS_ALLOW_ORIGIN
+        allow_methods: ['GET', 'OPTIONS', 'POST', 'PUT', 'PATCH', 'DELETE'] #Permite los métodos HTTP necesarios
+        allow_headers: ['Content-Type', 'Authorization'] #Permite las cabeceras Content-Type y Authorization
+        expose_headers: ['Link'] #Expone la cabecera Link
+        max_age: 3600 #Define el tiempo de caché para las respuestas preflight
+    paths:
+        '^/': null #Aplica la configuración a todas las rutas
