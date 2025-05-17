@@ -1,8 +1,16 @@
 <script setup>
 // Importaciones para la navegación
 import { useRouter } from 'vue-router';
+import { useAuthStore } from '@/router/auth';
+import authService from '@/services/authService';
+import { computed } from 'vue';
 
 const router = useRouter();
+const authStore = useAuthStore();
+
+// Estado de autenticación
+const isAuthenticated = computed(() => authStore.isAuthenticated);
+const userName = computed(() => authStore.user?.name || 'Usuario');
 
 // Funciones de navegación
 const goToHome = () => {
@@ -17,8 +25,26 @@ const goToLogin = () => {
   router.push('/login');
 };
 
+const goToProfile = () => {
+  router.push('/profile');
+};
+
 const goToCart = () => {
   router.push('/cart');
+};
+
+// Función para cerrar sesión
+const handleLogout = async () => {
+  try {
+    await authService.logout();
+    authStore.logout();
+    router.push('/');
+  } catch (error) {
+    console.error('Error al cerrar sesión:', error);
+    // Incluso si hay error en el servidor, cerramos sesión localmente
+    authStore.logout();
+    router.push('/');
+  }
 };
 </script>
 
@@ -33,7 +59,7 @@ const goToCart = () => {
       <div class="logo-container">
         <h3 @click="goToHome" style="cursor: pointer;">Inicio</h3>
       </div>
-      
+
       <div class="search-container">
         <div class="search-box">
           <input type="text" placeholder="Buscar productos..." class="search-input" />
@@ -51,12 +77,27 @@ const goToCart = () => {
           <button class="search-button">Buscar</button>
         </div>
       </div>
-      
+
+      <!-- Mostrar opciones según estado de autenticación -->
       <div class="user-actions">
-        <a @click="goToLogin" class="user-action-link" style="cursor: pointer;">
-          <span class="icon">👤</span>
-          <span class="text">Iniciar sesión</span>
-        </a>
+        <template v-if="isAuthenticated">
+          <div class="dropdown">
+            <a class="user-action-link" style="cursor: pointer;">
+              <span class="icon">👤</span>
+              <span class="text">{{ userName }}</span>
+            </a>
+            <div class="dropdown-content">
+              <a @click="goToProfile" style="cursor: pointer;">Mi perfil</a>
+              <a @click="handleLogout" style="cursor: pointer;">Cerrar sesión</a>
+            </div>
+          </div>
+        </template>
+        <template v-else>
+          <a @click="goToLogin" class="user-action-link" style="cursor: pointer;">
+            <span class="icon">👤</span>
+            <span class="text">Iniciar sesión</span>
+          </a>
+        </template>
       </div>
       <div class="user-actions margin-right-50">
         <a @click="goToCart" class="user-action-link" style="cursor: pointer;">
@@ -65,7 +106,7 @@ const goToCart = () => {
         </a>
       </div>
     </div>
-    
+
     <!-- Franja inferior - Categorías -->
     <nav class="categories-nav">
       <ul class="categories-list">
@@ -189,6 +230,39 @@ const goToCart = () => {
   font-size: 1rem;
 }
 
+/* Dropdown menu */
+.dropdown {
+  position: relative;
+  display: inline-block;
+}
+
+.dropdown-content {
+  display: none;
+  position: absolute;
+  right: 0;
+  background-color: white;
+  min-width: 160px;
+  box-shadow: 0px 8px 16px 0px rgba(0,0,0,0.2);
+  z-index: 1;
+  border-radius: 4px;
+}
+
+.dropdown-content a {
+  color: #333;
+  padding: 12px 16px;
+  text-decoration: none;
+  display: block;
+  text-align: left;
+}
+
+.dropdown-content a:hover {
+  background-color: #f1f1f1;
+}
+
+.dropdown:hover .dropdown-content {
+  display: block;
+}
+
 /* Franja inferior - Categorías */
 .categories-nav {
   background-color: #3a7a23;
@@ -224,15 +298,15 @@ const goToCart = () => {
     flex-direction: column;
     gap: var(--spacing-md);
   }
-  
+
   .logo-container, .search-container, .user-actions {
     width: 100%;
   }
-  
+
   .user-actions {
     justify-content: center;
   }
-  
+
   .categories-list {
     flex-wrap: nowrap;
     justify-content: flex-start;
@@ -245,7 +319,7 @@ const goToCart = () => {
   .search-box {
     flex-direction: column;
   }
-  
+
   .category-select {
     border-left: none;
     border-top: 1px solid #ddd;

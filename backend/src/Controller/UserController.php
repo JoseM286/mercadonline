@@ -64,27 +64,27 @@ class UserController extends AbstractController
             );
             $user->setPassword($hashedPassword);
 
-            // Verificar si se solicita rol de administrador
+            // Verifico si se solicita rol de administrador
             $requestedAdminRole = isset($data['role']) && $data['role'] === User::ROLE_ADMIN;
-            
-            // Si se solicita rol de administrador, verificar si ya existe algún administrador
+
+            // Si se solicita rol de administrador, verifico si ya existe algún administrador
             if ($requestedAdminRole) {
                 $adminExists = $this->userRepository->count(['role' => User::ROLE_ADMIN]) > 0;
                 if ($adminExists) {
-                    // Si ya existe un administrador, asignar rol de usuario normal
+                    // Si ya existe un administrador, asigno rol de usuario normal
                     $user->setRole(User::ROLE_USER);
                 } else {
-                    // Si no existe ningún administrador, permitir la creación del primer admin
+                    // Si no existe ningún administrador, permito la creación del primer admin
                     $user->setRole(User::ROLE_ADMIN);
                 }
             } else {
-                // Si no se solicita rol de administrador, asignar rol de usuario normal
+                // Si no se solicita rol de administrador, asigno rol de usuario normal
                 $user->setRole(User::ROLE_USER);
             }
 
             $user->setCreatedAt(new \DateTimeImmutable());
 
-            // Opcional: establecer dirección y teléfono si se proporcionan
+            // Opcional: establezco dirección y teléfono si se proporcionan
             if (isset($data['address'])) {
                 $user->setAddress($data['address']);
             }
@@ -92,7 +92,7 @@ class UserController extends AbstractController
                 $user->setPhone($data['phone']);
             }
 
-            // Guardar en la base de datos
+            // Guardo en la base de datos
             $this->entityManager->persist($user);
             $this->entityManager->flush();
 
@@ -127,7 +127,7 @@ class UserController extends AbstractController
                 'email' => $user->getEmail(),
                 'name' => $user->getName(),
                 'role' => $user->getRole(),
-                // No incluimos la contraseña por seguridad
+                // No incluyo la contraseña por seguridad
             ]
         ]);
     }
@@ -136,7 +136,7 @@ class UserController extends AbstractController
     public function logout(): JsonResponse
     {
         // El proceso de logout real es manejado por Symfony Security
-        // Solo necesitamos proporcionar una respuesta JSON
+        // Solo necesito proporcionar una respuesta JSON
         return $this->json([
             'message' => 'Sesión cerrada correctamente'
         ]);
@@ -264,4 +264,3 @@ class UserController extends AbstractController
         }
     }
 }
-

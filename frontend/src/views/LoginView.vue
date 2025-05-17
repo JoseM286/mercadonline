@@ -1,5 +1,14 @@
 <script setup>
 import { ref } from 'vue';
+import { useRouter } from 'vue-router';
+import { useAuthStore } from '@/router/auth';
+import authService from '@/services/authService';
+
+// Router para redireccionar después del login
+const router = useRouter();
+
+// Store de autenticación
+const authStore = useAuthStore();
 
 // Variables reactivas para el formulario
 const loginForm = ref({
@@ -11,7 +20,8 @@ const loginForm = ref({
 const formStatus = ref({
   message: '',
   isError: false,
-  isSuccess: false
+  isSuccess: false,
+  loading: false
 });
 
 // Función para validar el email
@@ -26,47 +36,57 @@ const handleSubmit = async () => {
   formStatus.value = {
     message: '',
     isError: false,
-    isSuccess: false
+    isSuccess: false,
+    loading: true
   };
-  
+
   // Validar campos
   if (!loginForm.value.email.trim() || !isValidEmail(loginForm.value.email)) {
     formStatus.value = {
       message: 'Por favor, introduce un correo electrónico válido',
-      isError: true
+      isError: true,
+      loading: false
     };
     return;
   }
-  
+
   if (!loginForm.value.password.trim()) {
     formStatus.value = {
       message: 'Por favor, introduce tu contraseña',
-      isError: true
+      isError: true,
+      loading: false
     };
     return;
   }
-  
+
   try {
-    // Aquí iría la lógica para enviar el formulario a través de una API
-    // Por ahora, simulamos una respuesta exitosa
-    
-    // Simulación de envío (reemplazar con llamada API real)
-    await new Promise(resolve => setTimeout(resolve, 1000));
-    
+    // Llamada real a la API de login
+    const response = await authService.login({
+      email: loginForm.value.email,
+      password: loginForm.value.password
+    });
+
+    // Guardar datos del usuario en el store
+    authStore.login(response.user);
+
     // Mostrar mensaje de éxito
     formStatus.value = {
       message: 'Inicio de sesión exitoso',
-      isSuccess: true
+      isSuccess: true,
+      loading: false
     };
-    
-    // Aquí se redireccionaría al usuario a la página principal
-    // router.push('/');
-    
+
+    // Redireccionar al usuario a la página principal después de un breve delay
+    setTimeout(() => {
+      router.push('/');
+    }, 1000);
+
   } catch (error) {
     // Manejar error
     formStatus.value = {
-      message: 'Error al iniciar sesión. Por favor, verifica tus credenciales.',
-      isError: true
+      message: error.message || 'Error al iniciar sesión. Por favor, verifica tus credenciales.',
+      isError: true,
+      loading: false
     };
     console.error('Error al iniciar sesión:', error);
   }
@@ -79,48 +99,50 @@ const handleSubmit = async () => {
       <h1>Iniciar sesión</h1>
       <img src="@/assets/images/logo_verde.png" alt="Logo MercadonLine" class="page-logo" />
     </div>
-    
+
     <div class="page-content">
       <p class="page-intro-centered">
         Accede a tu cuenta para gestionar tus pedidos y disfrutar de ofertas exclusivas.
       </p>
-      
+
       <div class="centered-container">
         <form @submit.prevent="handleSubmit" class="section-card-accent">
           <!-- Mensaje de estado del formulario -->
-          <div v-if="formStatus.message" 
-               :class="['status-message', 
-                       {'error-message': formStatus.isError, 
+          <div v-if="formStatus.message"
+               :class="['status-message',
+                       {'error-message': formStatus.isError,
                         'success-message': formStatus.isSuccess}]">
             {{ formStatus.message }}
           </div>
-          
+
           <div class="form-group">
             <label for="email">Correo electrónico</label>
-            <input 
-              type="email" 
-              id="email" 
-              v-model="loginForm.email" 
+            <input
+              type="email"
+              id="email"
+              v-model="loginForm.email"
               placeholder="tu@email.com"
               required
             />
           </div>
-          
+
           <div class="form-group">
             <label for="password">Contraseña</label>
-            <input 
-              type="password" 
-              id="password" 
-              v-model="loginForm.password" 
+            <input
+              type="password"
+              id="password"
+              v-model="loginForm.password"
               placeholder="Tu contraseña"
               required
             />
           </div>
-          
+
           <div class="form-actions">
-            <button type="submit" class="login-button">Iniciar sesión</button>
+            <button type="submit" class="login-button" :disabled="formStatus.loading">
+              {{ formStatus.loading ? 'Iniciando sesión...' : 'Iniciar sesión' }}
+            </button>
           </div>
-          
+
           <div class="form-footer">
             <p>¿No tienes cuenta? <router-link to="/register" class="register-link">Regístrate aquí</router-link></p>
           </div>
