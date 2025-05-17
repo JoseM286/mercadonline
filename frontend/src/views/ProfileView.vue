@@ -8,8 +8,6 @@ import authService from '@/services/authService';
 const router = useRouter();
 const authStore = useAuthStore();
 
-// La URL de la API se maneja directamente en los servicios
-
 // Estado del formulario
 const formStatus = ref({
   message: '',
