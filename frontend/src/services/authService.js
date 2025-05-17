@@ -34,9 +34,9 @@ export default {
    */
   async login(credentials) {
     try {
-      const response = await axios.post(`${API_URL}/users/login`, credentials);
-      // Guardamos el usuario en localStorage para mantener la sesión
-      localStorage.setItem('user', JSON.stringify(response.data.user));
+      const response = await axios.post(`${API_URL}/users/login`, credentials, {
+        withCredentials: true
+      });
       return response.data;
     } catch (error) {
       if (error.response) {
@@ -51,9 +51,29 @@ export default {
 
   /**
    * Cierra la sesión del usuario actual
+   * @returns {Promise} - Promesa con el resultado de la operación
    */
-  logout() {
-    localStorage.removeItem('user');
+  async logout() {
+    try {
+      console.log('Intentando cerrar sesión en:', `${API_URL}/users/logout`);
+      const response = await axios.post(`${API_URL}/users/logout`, {}, {
+        withCredentials: true
+      });
+      // Eliminar datos del usuario del localStorage
+      localStorage.removeItem('user');
+      return response.data;
+    } catch (error) {
+      console.error('Error en logout:', error);
+      // Incluso si hay error, eliminamos los datos locales
+      localStorage.removeItem('user');
+      if (error.response) {
+        throw new Error(error.response.data.error || 'Error al cerrar sesión');
+      } else if (error.request) {
+        throw new Error('No se pudo conectar con el servidor');
+      } else {
+        throw new Error('Error al procesar la solicitud');
+      }
+    }
   },
 
   /**
@@ -65,4 +85,6 @@ export default {
     return user ? JSON.parse(user) : null;
   }
 };
+
+
 

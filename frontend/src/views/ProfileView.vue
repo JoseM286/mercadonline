@@ -2,18 +2,15 @@
 import { ref, onMounted } from 'vue';
 import { useRouter } from 'vue-router';
 import { useAuthStore } from '@/router/auth';
+import userService from '@/services/userService';
+import authService from '@/services/authService';
+import axios from 'axios';
 
 const router = useRouter();
 const authStore = useAuthStore();
-const user = ref(authStore.user || {});
 
-// Datos del perfil
-const profile = ref({
-  name: user.value.name || '',
-  email: user.value.email || '',
-  address: user.value.address || '',
-  phone: user.value.phone || ''
-});
+// Obtenemos la URL base de la API del archivo de entorno o usamos un valor por defecto
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8080/api';
 
 // Estado del formulario
 const formStatus = ref({
@@ -23,11 +20,54 @@ const formStatus = ref({
   loading: false
 });
 
+// Datos del perfil
+const profile = ref({
+  name: '',
+  email: '',
+  address: '',
+  phone: ''
+});
+
+// Cargar datos del perfil al montar el componente
+onMounted(async () => {
+  try {
+    formStatus.value.loading = true;
+    
+    // Obtener datos del perfil desde el servidor
+    const response = await userService.getProfile();
+    
+    // Actualizar el perfil con los datos recibidos
+    if (response.user) {
+      profile.value = {
+        name: response.user.name || '',
+        email: response.user.email || '',
+        address: response.user.address || '',
+        phone: response.user.phone || ''
+      };
+      
+      // Actualizar también el store de autenticación
+      authStore.setUser(response.user);
+    }
+  } catch (error) {
+    console.error('Error al cargar el perfil:', error);
+    formStatus.value.message = 'No se pudo cargar la información del perfil';
+    formStatus.value.isError = true;
+    
+    // Si hay un error de autenticación, redirigir al login
+    if (error.message.includes('no autenticado') || error.message.includes('Unauthorized')) {
+      authStore.logout();
+      router.push('/login');
+    }
+  } finally {
+    formStatus.value.loading = false;
+  }
+});
+
 // Función para cerrar sesión
 const handleLogout = async () => {
   try {
     // Llamar al servicio de autenticación para cerrar sesión
-    // await authService.logout();
+    await authService.logout();
     
     // Actualizar el store
     authStore.logout();
@@ -45,25 +85,32 @@ const handleLogout = async () => {
 // Función para actualizar el perfil
 const updateProfile = async () => {
   formStatus.value.loading = true;
+  formStatus.value.message = '';
+  formStatus.value.isError = false;
+  formStatus.value.isSuccess = false;
   
   try {
-    // Aquí iría la llamada a la API para actualizar el perfil
-    // await userService.updateProfile(profile.value);
+    // Enviar datos actualizados al servidor
+    const response = await userService.updateProfile({
+      name: profile.value.name,
+      address: profile.value.address,
+      phone: profile.value.phone
+    });
     
-    // Simulamos una actualización exitosa
-    setTimeout(() => {
-      formStatus.value = {
-        message: 'Perfil actualizado correctamente',
-        isSuccess: true,
-        loading: false
-      };
-    }, 1000);
+    // Actualizar el store con los datos actualizados
+    if (response.user) {
+      authStore.setUser(response.user);
+    }
+    
+    // Mostrar mensaje de éxito
+    formStatus.value.message = 'Perfil actualizado correctamente';
+    formStatus.value.isSuccess = true;
   } catch (error) {
-    formStatus.value = {
-      message: 'Error al actualizar el perfil',
-      isError: true,
-      loading: false
-    };
+    console.error('Error al actualizar el perfil:', error);
+    formStatus.value.message = error.message || 'Error al actualizar el perfil';
+    formStatus.value.isError = true;
+  } finally {
+    formStatus.value.loading = false;
   }
 };
 </script>
@@ -111,6 +158,7 @@ const updateProfile = async () => {
                   id="name"
                   v-model="profile.name"
                   placeholder="Tu nombre completo"
+                  required
                 />
               </div>
               
@@ -184,19 +232,8 @@ const updateProfile = async () => {
 }
 
 .avatar {
-  font-size: 3rem;
+  font-size: 48px;
   margin-bottom: var(--spacing-sm);
-}
-
-.user-info h3 {
-  margin: 0;
-  margin-bottom: var(--spacing-xs);
-}
-
-.user-info p {
-  margin: 0;
-  color: var(--color-text-secondary);
-  font-size: 0.9rem;
 }
 
 .sidebar-menu {
@@ -212,7 +249,6 @@ const updateProfile = async () => {
   border: none;
   border-radius: 4px;
   cursor: pointer;
-  font-size: 1rem;
   transition: background-color 0.2s;
 }
 
@@ -223,25 +259,19 @@ const updateProfile = async () => {
 .menu-item.active {
   background-color: var(--color-primary-light);
   color: var(--color-primary);
-  font-weight: bold;
+  font-weight: 500;
 }
 
 .menu-item.logout {
-  margin-top: var(--spacing-md);
+  margin-top: auto;
   color: var(--color-error);
 }
 
 .section-card {
-  background-color: white;
+  background-color: var(--color-bg-card);
   border-radius: 8px;
   padding: var(--spacing-lg);
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-}
-
-.section-card h2 {
-  margin-top: 0;
-  margin-bottom: var(--spacing-md);
-  color: var(--color-primary);
+  box-shadow: var(--shadow-sm);
 }
 
 .form-group {
@@ -251,46 +281,27 @@ const updateProfile = async () => {
 .form-group label {
   display: block;
   margin-bottom: var(--spacing-xs);
-  font-weight: bold;
+  font-weight: 500;
 }
 
 .form-group input,
 .form-group textarea {
   width: 100%;
-  padding: var(--spacing-sm);
-  border: 1px solid #ddd;
-  border-radius: 4px;
-  font-size: 1rem;
+  padding: 10px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--border-radius);
 }
 
 .form-group input:disabled {
-  background-color: #f5f5f5;
+  background-color: var(--color-bg-disabled);
   cursor: not-allowed;
 }
 
 .form-group small {
   display: block;
-  color: var(--color-text-secondary);
-  margin-top: var(--spacing-xs);
-  font-size: 0.8rem;
-}
-
-.status-message {
-  padding: var(--spacing-sm);
-  margin-bottom: var(--spacing-md);
-  border-radius: 4px;
-}
-
-.error-message {
-  background-color: #ffebee;
-  color: #c62828;
-  border: 1px solid #ef9a9a;
-}
-
-.success-message {
-  background-color: #e8f5e9;
-  color: #2e7d32;
-  border: 1px solid #a5d6a7;
+  color: var(--color-text-light);
+  margin-top: 4px;
+  font-size: 0.85em;
 }
 
 .form-actions {
@@ -298,15 +309,14 @@ const updateProfile = async () => {
 }
 
 .update-button {
-  padding: var(--spacing-sm) var(--spacing-md);
+  padding: 10px 20px;
   background-color: var(--color-primary);
   color: white;
   border: none;
-  border-radius: 4px;
-  font-size: 1rem;
-  font-weight: bold;
+  border-radius: var(--border-radius);
   cursor: pointer;
-  transition: background-color 0.3s ease;
+  font-weight: 500;
+  transition: background-color 0.2s;
 }
 
 .update-button:hover {
@@ -314,17 +324,26 @@ const updateProfile = async () => {
 }
 
 .update-button:disabled {
-  background-color: #cccccc;
+  background-color: var(--color-primary-light);
   cursor: not-allowed;
 }
 
-@media (max-width: 768px) {
-  .profile-container {
-    flex-direction: column;
-  }
-  
-  .profile-sidebar {
-    width: 100%;
-  }
+.status-message {
+  padding: var(--spacing-sm);
+  margin-bottom: var(--spacing-md);
+  border-radius: var(--border-radius);
+}
+
+.error-message {
+  background-color: var(--color-error-bg);
+  color: var(--color-error);
+  border: 1px solid var(--color-error);
+}
+
+.success-message {
+  background-color: var(--color-success-bg);
+  color: var(--color-success);
+  border: 1px solid var(--color-success);
 }
 </style>
+

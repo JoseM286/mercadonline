@@ -67,7 +67,7 @@ const handleSubmit = async () => {
     });
 
     // Guardar datos del usuario en el store
-    authStore.login(response.user);
+    authStore.setUser(response.user);  // Cambiado de login a setUser
 
     // Mostrar mensaje de éxito
     formStatus.value = {
@@ -250,6 +250,7 @@ const handleSubmit = async () => {
   text-decoration: underline;
 }
 </style>
+
 
 
 
