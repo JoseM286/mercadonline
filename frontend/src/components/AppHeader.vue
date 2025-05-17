@@ -36,12 +36,27 @@ const goToCart = () => {
 // Función para cerrar sesión
 const handleLogout = async () => {
   try {
-    await authService.logout();
+    console.log('Iniciando proceso de logout');
+
+    // Intentamos cerrar sesión en el servidor primero
+    try {
+      console.log('Llamando a authService.logout()');
+      const response = await authService.logout();
+      console.log('Respuesta del servidor:', response);
+    } catch (error) {
+      console.error('Error al cerrar sesión en el servidor:', error);
+      // No es crítico si falla en el servidor
+    }
+
+    // Cerramos sesión localmente después
     authStore.logout();
+    console.log('Sesión local cerrada');
+
+    // Redirigimos al usuario a la página principal
     router.push('/');
   } catch (error) {
-    console.error('Error al cerrar sesión:', error);
-    // Incluso si hay error en el servidor, cerramos sesión localmente
+    console.error('Error general en el proceso de logout:', error);
+    // Aseguramos que la sesión local se cierre en cualquier caso
     authStore.logout();
     router.push('/');
   }

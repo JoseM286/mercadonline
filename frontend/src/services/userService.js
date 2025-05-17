@@ -1,7 +1,9 @@
 import axios from 'axios';
 
 // Obtenemos la URL base de la API del archivo de entorno o usamos un valor por defecto
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8080/api';
+// Aseguramos que la URL termine con /api
+const baseUrl = import.meta.env.VITE_API_URL || 'http://localhost:8080';
+const API_URL = baseUrl.endsWith('/api') ? baseUrl : `${baseUrl}/api`;
 
 /**
  * Servicio para manejar operaciones relacionadas con usuarios

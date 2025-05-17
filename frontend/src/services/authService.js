@@ -1,7 +1,9 @@
 import axios from 'axios';
 
 // Obtenemos la URL base de la API del archivo de entorno o usamos un valor por defecto
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8080/api';
+// Aseguramos que la URL termine con /api
+const baseUrl = import.meta.env.VITE_API_URL || 'http://localhost:8080';
+const API_URL = baseUrl.endsWith('/api') ? baseUrl : `${baseUrl}/api`;
 
 /**
  * Servicio para manejar la autenticación de usuarios
@@ -55,10 +57,19 @@ export default {
    */
   async logout() {
     try {
-      console.log('Intentando cerrar sesión en:', `${API_URL}/users/logout`);
-      const response = await axios.post(`${API_URL}/users/logout`, {}, {
-        withCredentials: true
+      // Aseguramos que estamos usando la URL correcta y el método correcto
+      const logoutUrl = `${API_URL}/users/logout`;
+      console.log('Intentando cerrar sesión en:', logoutUrl);
+
+      // Usamos directamente axios.post para asegurar que se usa el método POST
+      const response = await axios.post(logoutUrl, {}, {
+        withCredentials: true,
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json'
+        }
       });
+
       // Eliminar datos del usuario del localStorage
       localStorage.removeItem('user');
       return response.data;

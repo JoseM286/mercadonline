@@ -4,13 +4,11 @@ import { useRouter } from 'vue-router';
 import { useAuthStore } from '@/router/auth';
 import userService from '@/services/userService';
 import authService from '@/services/authService';
-import axios from 'axios';
 
 const router = useRouter();
 const authStore = useAuthStore();
 
-// Obtenemos la URL base de la API del archivo de entorno o usamos un valor por defecto
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8080/api';
+// La URL de la API se maneja directamente en los servicios
 
 // Estado del formulario
 const formStatus = ref({
@@ -32,10 +30,10 @@ const profile = ref({
 onMounted(async () => {
   try {
     formStatus.value.loading = true;
-    
+
     // Obtener datos del perfil desde el servidor
     const response = await userService.getProfile();
-    
+
     // Actualizar el perfil con los datos recibidos
     if (response.user) {
       profile.value = {
@@ -44,7 +42,7 @@ onMounted(async () => {
         address: response.user.address || '',
         phone: response.user.phone || ''
       };
-      
+
       // Actualizar también el store de autenticación
       authStore.setUser(response.user);
     }
@@ -52,7 +50,7 @@ onMounted(async () => {
     console.error('Error al cargar el perfil:', error);
     formStatus.value.message = 'No se pudo cargar la información del perfil';
     formStatus.value.isError = true;
-    
+
     // Si hay un error de autenticación, redirigir al login
     if (error.message.includes('no autenticado') || error.message.includes('Unauthorized')) {
       authStore.logout();
@@ -66,17 +64,27 @@ onMounted(async () => {
 // Función para cerrar sesión
 const handleLogout = async () => {
   try {
-    // Llamar al servicio de autenticación para cerrar sesión
-    await authService.logout();
-    
-    // Actualizar el store
+    console.log('Iniciando proceso de logout desde ProfileView');
+
+    // Intentamos cerrar sesión en el servidor primero
+    try {
+      console.log('Llamando a authService.logout() desde ProfileView');
+      const response = await authService.logout();
+      console.log('Respuesta del servidor:', response);
+    } catch (error) {
+      console.error('Error al cerrar sesión en el servidor desde ProfileView:', error);
+      // No es crítico si falla en el servidor
+    }
+
+    // Cerramos sesión localmente después
     authStore.logout();
-    
+    console.log('Sesión local cerrada desde ProfileView');
+
     // Redireccionar a la página principal
     router.push('/');
   } catch (error) {
-    console.error('Error al cerrar sesión:', error);
-    // Incluso si hay error, cerramos sesión localmente
+    console.error('Error general en el proceso de logout desde ProfileView:', error);
+    // Aseguramos que la sesión local se cierre en cualquier caso
     authStore.logout();
     router.push('/');
   }
@@ -88,7 +96,7 @@ const updateProfile = async () => {
   formStatus.value.message = '';
   formStatus.value.isError = false;
   formStatus.value.isSuccess = false;
-  
+
   try {
     // Enviar datos actualizados al servidor
     const response = await userService.updateProfile({
@@ -96,12 +104,12 @@ const updateProfile = async () => {
       address: profile.value.address,
       phone: profile.value.phone
     });
-    
+
     // Actualizar el store con los datos actualizados
     if (response.user) {
       authStore.setUser(response.user);
     }
-    
+
     // Mostrar mensaje de éxito
     formStatus.value.message = 'Perfil actualizado correctamente';
     formStatus.value.isSuccess = true;
@@ -141,7 +149,7 @@ const updateProfile = async () => {
         <div class="profile-content">
           <div class="section-card">
             <h2>Información Personal</h2>
-            
+
             <!-- Mensaje de estado del formulario -->
             <div v-if="formStatus.message"
                  :class="['status-message',
@@ -149,7 +157,7 @@ const updateProfile = async () => {
                           'success-message': formStatus.isSuccess}]">
               {{ formStatus.message }}
             </div>
-            
+
             <form @submit.prevent="updateProfile">
               <div class="form-group">
                 <label for="name">Nombre completo</label>
@@ -161,7 +169,7 @@ const updateProfile = async () => {
                   required
                 />
               </div>
-              
+
               <div class="form-group">
                 <label for="email">Correo electrónico</label>
                 <input
@@ -173,7 +181,7 @@ const updateProfile = async () => {
                 />
                 <small>El correo electrónico no se puede cambiar</small>
               </div>
-              
+
               <div class="form-group">
                 <label for="address">Dirección</label>
                 <textarea
@@ -183,7 +191,7 @@ const updateProfile = async () => {
                   rows="3"
                 ></textarea>
               </div>
-              
+
               <div class="form-group">
                 <label for="phone">Teléfono</label>
                 <input
@@ -193,7 +201,7 @@ const updateProfile = async () => {
                   placeholder="Tu número de teléfono"
                 />
               </div>
-              
+
               <div class="form-actions">
                 <button type="submit" class="update-button" :disabled="formStatus.loading">
                   {{ formStatus.loading ? 'Actualizando...' : 'Actualizar Perfil' }}
