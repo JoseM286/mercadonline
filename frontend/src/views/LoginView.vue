@@ -69,9 +69,9 @@ const handleSubmit = async () => {
     // Guardar datos del usuario en el store
     authStore.setUser(response.user);  // Cambiado de login a setUser
 
-    // Mostrar mensaje de éxito
+    // Login exitoso
     formStatus.value = {
-      message: 'Inicio de sesión exitoso',
+      message: '',
       isSuccess: true,
       loading: false
     };
@@ -109,6 +109,12 @@ const handleSubmit = async () => {
 
       <div class="centered-container">
         <form @submit.prevent="handleSubmit" class="section-card-accent">
+          <!-- Overlay de carga con imagen GIF -->
+          <div v-if="formStatus.loading" class="loading-overlay">
+            <img src="@/assets/images/spinner.gif" alt="Cargando..." class="spinner-gif" />
+            <p>Iniciando sesión...</p>
+          </div>
+          
           <!-- Mensaje de estado del formulario -->
           <div v-if="formStatus.message"
                :class="['status-message',
@@ -141,7 +147,7 @@ const handleSubmit = async () => {
 
           <div class="form-actions">
             <button type="submit" class="login-button" :disabled="formStatus.loading">
-              {{ formStatus.loading ? 'Iniciando sesión...' : 'Iniciar sesión' }}
+              Iniciar sesión
             </button>
           </div>
 
@@ -166,6 +172,7 @@ const handleSubmit = async () => {
   width: 100%;
   max-width: 400px;
   padding: var(--spacing-lg);
+  position: relative;
 }
 
 .page-intro-centered {
@@ -249,7 +256,42 @@ const handleSubmit = async () => {
 .register-link:hover {
   text-decoration: underline;
 }
+
+/* Estilos para el overlay de carga */
+.loading-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(255, 255, 255, 0.7);
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  z-index: 10;
+  border-radius: 8px;
+}
+
+.loading-overlay p {
+  margin-top: 15px;
+  font-weight: bold;
+  color: #2c5e1a;
+}
+
+.spinner-gif {
+  width: 80px;
+  height: 80px;
+}
 </style>
+
+
+
+
+
+
+
+
 
 
 

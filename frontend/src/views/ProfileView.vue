@@ -149,6 +149,12 @@ const updateProfile = async () => {
           <div class="section-card">
             <h2>Información Personal</h2>
 
+            <!-- Overlay de carga con imagen GIF -->
+            <div v-if="formStatus.loading" class="loading-overlay">
+              <img src="@/assets/images/spinner.gif" alt="Cargando..." class="spinner-gif" />
+              <p>Actualizando perfil...</p>
+            </div>
+
             <!-- Mensaje de estado del formulario -->
             <div v-if="formStatus.message"
                  :class="['status-message',
@@ -279,6 +285,7 @@ const updateProfile = async () => {
   border-radius: 8px;
   padding: var(--spacing-lg);
   box-shadow: var(--shadow-sm);
+  position: relative;
 }
 
 .form-group {
@@ -352,5 +359,33 @@ const updateProfile = async () => {
   color: var(--color-success);
   border: 1px solid var(--color-success);
 }
+
+/* Estilos para el overlay de carga */
+.loading-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(255, 255, 255, 0.7);
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  z-index: 10;
+  border-radius: 8px;
+}
+
+.loading-overlay p {
+  margin-top: 15px;
+  font-weight: bold;
+  color: var(--color-primary);
+}
+
+.spinner-gif {
+  width: 80px;
+  height: 80px;
+}
 </style>
+
 
