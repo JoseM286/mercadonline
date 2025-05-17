@@ -1,5 +1,9 @@
 <script setup>
-import { ref } from 'vue';
+import { ref, reactive } from 'vue';
+import { useRouter } from 'vue-router';
+import authService from '@/services/authService';
+
+const router = useRouter();
 
 // Variables reactivas para el formulario
 const registerForm = ref({
@@ -12,10 +16,11 @@ const registerForm = ref({
 });
 
 // Variable para mostrar mensajes de estado
-const formStatus = ref({
+const formStatus = reactive({
   message: '',
   isError: false,
-  isSuccess: false
+  isSuccess: false,
+  isLoading: false
 });
 
 // Función para validar el email
@@ -27,75 +32,81 @@ const isValidEmail = (email) => {
 // Función para manejar el envío del formulario
 const handleSubmit = async () => {
   // Resetear el estado del formulario
-  formStatus.value = {
-    message: '',
-    isError: false,
-    isSuccess: false
-  };
+  formStatus.message = '';
+  formStatus.isError = false;
+  formStatus.isSuccess = false;
+  formStatus.isLoading = true;
   
   // Validar campos requeridos
   if (!registerForm.value.email.trim() || !isValidEmail(registerForm.value.email)) {
-    formStatus.value = {
-      message: 'Por favor, introduce un correo electrónico válido',
-      isError: true
-    };
+    formStatus.message = 'Por favor, introduce un correo electrónico válido';
+    formStatus.isError = true;
+    formStatus.isLoading = false;
     return;
   }
   
   if (!registerForm.value.password.trim()) {
-    formStatus.value = {
-      message: 'Por favor, introduce una contraseña',
-      isError: true
-    };
+    formStatus.message = 'Por favor, introduce una contraseña';
+    formStatus.isError = true;
+    formStatus.isLoading = false;
     return;
   }
   
   if (registerForm.value.password !== registerForm.value.confirmPassword) {
-    formStatus.value = {
-      message: 'Las contraseñas no coinciden',
-      isError: true
-    };
+    formStatus.message = 'Las contraseñas no coinciden';
+    formStatus.isError = true;
+    formStatus.isLoading = false;
+    return;
+  }
+
+  if (!registerForm.value.name.trim()) {
+    formStatus.message = 'Por favor, introduce tu nombre';
+    formStatus.isError = true;
+    formStatus.isLoading = false;
     return;
   }
   
   try {
-    // Aquí iría la lógica para enviar el formulario a través de una API
-    // Por ahora, simulamos una respuesta exitosa
-    
-    // Simulación de envío (reemplazar con llamada API real)
-    await new Promise(resolve => setTimeout(resolve, 1000));
-    
-    // Mostrar mensaje de éxito
-    formStatus.value = {
-      message: 'Registro exitoso. ¡Bienvenido a MercadonLine!',
-      isSuccess: true
+    // Preparar datos para enviar al servidor
+    const userData = {
+      email: registerForm.value.email,
+      password: registerForm.value.password,
+      name: registerForm.value.name,
+      address: registerForm.value.address || null,
+      phone: registerForm.value.phone || null
     };
     
-    // Aquí se redireccionaría al usuario a la página principal
-    // router.push('/');
+    // Enviar datos al servidor
+    const response = await authService.register(userData);
+    
+    // Mostrar mensaje de éxito
+    formStatus.message = 'Registro exitoso. ¡Bienvenido a MercadonLine!';
+    formStatus.isSuccess = true;
+    
+    // Esperar un momento antes de redirigir
+    setTimeout(() => {
+      // Redirigir al usuario a la página de login
+      router.push('/login');
+    }, 2000);
     
   } catch (error) {
     // Manejar error
-    formStatus.value = {
-      message: 'Error al registrar la cuenta. Por favor, inténtalo de nuevo.',
-      isError: true
-    };
+    formStatus.message = error.message || 'Error al registrar la cuenta. Por favor, inténtalo de nuevo.';
+    formStatus.isError = true;
     console.error('Error al registrar:', error);
+  } finally {
+    formStatus.isLoading = false;
   }
 };
 </script>
 
 <template>
-  <div class="page-container-narrow">
-    <div class="page-header-with-logo">
-      <h1>Crear cuenta</h1>
-      <img src="@/assets/images/logo_verde.png" alt="Logo MercadonLine" class="page-logo" />
-    </div>
-    
-    <div class="page-content">
-      <p class="page-intro-centered">
-        Crea tu cuenta en MercadonLine para disfrutar de una experiencia de compra personalizada.
-      </p>
+  <div class="register-page">
+    <div class="container">
+      <div class="page-intro-centered">
+        <h1>Crear cuenta</h1>
+        <p>Únete a MercadonLine para disfrutar de una experiencia de compra única</p>
+      </div>
       
       <div class="centered-container">
         <form @submit.prevent="handleSubmit" class="section-card-accent">
@@ -141,17 +152,18 @@ const handleSubmit = async () => {
             />
           </div>
           
-          <!-- Campos opcionales -->
           <div class="form-group">
-            <label for="name">Nombre completo</label>
+            <label for="name">Nombre completo *</label>
             <input 
               type="text" 
               id="name" 
               v-model="registerForm.name" 
               placeholder="Tu nombre y apellidos"
+              required
             />
           </div>
           
+          <!-- Campos opcionales -->
           <div class="form-group">
             <label for="address">Dirección</label>
             <input 
@@ -175,7 +187,13 @@ const handleSubmit = async () => {
           <p class="required-fields-note">* Campos obligatorios</p>
           
           <div class="form-actions">
-            <button type="submit" class="register-button">Crear cuenta</button>
+            <button 
+              type="submit" 
+              class="register-button" 
+              :disabled="formStatus.isLoading"
+            >
+              {{ formStatus.isLoading ? 'Creando cuenta...' : 'Crear cuenta' }}
+            </button>
           </div>
           
           <div class="form-footer">
@@ -215,78 +233,77 @@ const handleSubmit = async () => {
 .form-group label {
   display: block;
   margin-bottom: var(--spacing-xs);
-  font-weight: bold;
+  font-weight: 500;
 }
 
 .form-group input {
   width: 100%;
-  padding: var(--spacing-sm);
-  border: 1px solid #ddd;
-  border-radius: 4px;
-  font-size: 1rem;
+  padding: 10px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--border-radius);
+}
+
+.required-fields-note {
+  font-size: 0.9em;
+  color: var(--color-text-light);
+  margin-top: var(--spacing-md);
+}
+
+.form-actions {
+  margin-top: var(--spacing-lg);
+}
+
+.register-button {
+  width: 100%;
+  padding: 12px;
+  background-color: var(--color-primary);
+  color: white;
+  border: none;
+  border-radius: var(--border-radius);
+  font-weight: 600;
+  cursor: pointer;
+  transition: background-color 0.3s;
+}
+
+.register-button:hover {
+  background-color: var(--color-primary-dark);
+}
+
+.register-button:disabled {
+  background-color: var(--color-primary-light);
+  cursor: not-allowed;
+}
+
+.form-footer {
+  margin-top: var(--spacing-md);
+  text-align: center;
+}
+
+.login-link {
+  color: var(--color-primary);
+  text-decoration: none;
+  font-weight: 500;
+}
+
+.login-link:hover {
+  text-decoration: underline;
 }
 
 .status-message {
   padding: var(--spacing-sm);
   margin-bottom: var(--spacing-md);
-  border-radius: 4px;
-  text-align: center;
+  border-radius: var(--border-radius);
 }
 
 .error-message {
-  background-color: #ffebee;
-  color: #c62828;
-  border: 1px solid #ef9a9a;
+  background-color: var(--color-error-bg);
+  color: var(--color-error);
+  border: 1px solid var(--color-error);
 }
 
 .success-message {
-  background-color: #e8f5e9;
-  color: #2e7d32;
-  border: 1px solid #a5d6a7;
-}
-
-.required-fields-note {
-  font-size: 0.9rem;
-  color: #666;
-  margin-top: var(--spacing-md);
-  margin-bottom: var(--spacing-md);
-}
-
-.form-actions {
-  margin-top: var(--spacing-lg);
-  text-align: center;
-}
-
-.register-button {
-  width: 100%;
-  padding: var(--spacing-md);
-  background-color: #2c5e1a;
-  color: white;
-  border: none;
-  border-radius: 4px;
-  font-size: 1.1rem;
-  font-weight: bold;
-  cursor: pointer;
-  transition: background-color 0.3s ease;
-}
-
-.register-button:hover {
-  background-color: #3a7a23;
-}
-
-.form-footer {
-  margin-top: var(--spacing-lg);
-  text-align: center;
-  font-size: 0.9rem;
-}
-
-.login-link {
-  color: #2c5e1a;
-  text-decoration: none;
-  font-weight: bold;
-}
-
-.login-link:hover {
-  text-decoration: underline;
+  background-color: var(--color-success-bg);
+  color: var(--color-success);
+  border: 1px solid var(--color-success);
 }
 </style>
