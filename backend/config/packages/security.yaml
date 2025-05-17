@@ -25,7 +25,7 @@ security:
       stateless: false
       remember_me:
         secret: "%kernel.secret%"
-        lifetime: 300 # 5 minutos de espera hasta borrar la sesion
+        lifetime: 300 # 5 minutos
         path: /
         always_remember_me: true
 

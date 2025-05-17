@@ -76,9 +76,11 @@ const handleSubmit = async () => {
       loading: false
     };
 
-    // Redireccionar al usuario a la página principal después de un breve delay
+    // Redireccionar al usuario a la página que intentaba visitar o a la página principal
     setTimeout(() => {
-      router.push('/');
+      const redirectPath = sessionStorage.getItem('redirectAfterLogin') || '/';
+      sessionStorage.removeItem('redirectAfterLogin'); // Limpiar después de usar
+      router.push(redirectPath);
     }, 1000);
 
   } catch (error) {
@@ -248,6 +250,7 @@ const handleSubmit = async () => {
   text-decoration: underline;
 }
 </style>
+
 
 
 
