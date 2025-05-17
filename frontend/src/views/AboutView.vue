@@ -60,7 +60,7 @@
             para mantener vivas nuestras tradiciones gastronómicas.
           </p>
           <div class="button-container">
-            <router-link to="/productos" class="community-button">Ver nuestros productos</router-link>
+            <router-link to="/" class="community-button">Ver nuestros productos</router-link>
           </div>
         </div>
       </div>

@@ -123,11 +123,12 @@ const updateProfile = async () => {
 
 <template>
   <div class="page-container">
-    <div class="page-header">
+    <div class="page-header-with-logo">
       <h1>Mi Perfil</h1>
+      <img src="@/assets/images/logo_verde.png" alt="Logo MercadonLine" class="page-logo" />
     </div>
 
-    <div class="page-content">
+    <div class="page-content center">
       <div class="profile-container">
         <div class="profile-sidebar">
           <div class="user-info">

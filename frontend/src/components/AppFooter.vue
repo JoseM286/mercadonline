@@ -5,8 +5,9 @@ import { computed } from 'vue';
 // Obtener la ruta actual
 const route = useRoute();
 
-// Comprobar si estamos en la página de contacto
+// Comprobar si estoy en estas paginas para no poner el volver arriba
 const isContactPage = computed(() => route.path === '/contact');
+const isProfilePage = computed(() => route.path === '/profile');
 
 // Función para volver arriba
 const scrollToTop = () => {
@@ -18,7 +19,7 @@ const scrollToTop = () => {
 </script>
 
 <template>
-    <button v-if="!isContactPage" class="scroll-top-button" @click="scrollToTop">
+    <button v-if="!isContactPage && !isProfilePage" class="scroll-top-button" @click="scrollToTop">
       Volver arriba ↑
     </button>
   <footer class="footer">
