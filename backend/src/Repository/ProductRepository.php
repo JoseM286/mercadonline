@@ -17,23 +17,28 @@ class ProductRepository extends ServiceEntityRepository
     }
 
     /**
-     * Busca productos por nombre (búsqueda parcial)
+     * Encuentra productos por nombre (búsqueda parcial)
      */
-    public function findByNameLike(string $search, int $limit = 10, int $offset = 0, ?int $categoryId = null): array
+    public function findByNameLike(string $search, int $limit = 10, int $offset = 0, ?int $categoryId = null, array $order = ['name' => 'ASC']): array
     {
         $qb = $this->createQueryBuilder('p')
             ->where('p.name LIKE :search')
-            ->setParameter('search', '%' . $search . '%')
-            ->orderBy('p.name', 'ASC')
-            ->setMaxResults($limit)
-            ->setFirstResult($offset);
+            ->setParameter('search', '%' . $search . '%');
             
         if ($categoryId) {
             $qb->andWhere('p.category = :categoryId')
                ->setParameter('categoryId', $categoryId);
         }
-            
-        return $qb->getQuery()->getResult();
+        
+        // Aplicar ordenación
+        foreach ($order as $field => $direction) {
+            $qb->orderBy('p.' . $field, $direction);
+        }
+        
+        return $qb->setMaxResults($limit)
+            ->setFirstResult($offset)
+            ->getQuery()
+            ->getResult();
     }
     
     /**
@@ -139,6 +144,7 @@ class ProductRepository extends ServiceEntityRepository
         return $result;
     }
 }
+
 
 
 

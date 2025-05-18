@@ -38,15 +38,23 @@ class ProductController extends AbstractController
             $criteria['category'] = $categoryId;
         }
 
+        // Parámetro de ordenación
+        $sort = $request->query->get('sort', 'name');
+        $order = ['name' => 'ASC']; // Orden predeterminado
+        
+        if ($sort === 'popularity') {
+            $order = ['sales' => 'DESC'];
+        }
+
         // Búsqueda por nombre
         $search = $request->query->get('search');
 
         // Obtener productos
         if ($search) {
-            $products = $this->productRepository->findByNameLike($search, $limit, $offset, $categoryId);
+            $products = $this->productRepository->findByNameLike($search, $limit, $offset, $categoryId, $order);
             $total = $this->productRepository->countByNameLike($search, $categoryId);
         } else {
-            $products = $this->productRepository->findBy($criteria, ['name' => 'ASC'], $limit, $offset);
+            $products = $this->productRepository->findBy($criteria, $order, $limit, $offset);
             $total = $this->productRepository->count($criteria);
         }
 
@@ -294,6 +302,10 @@ class ProductController extends AbstractController
         }
     }
 }
+
+
+
+
 
 
 
