@@ -1,77 +1,72 @@
 <script setup>
-import { ref, onMounted } from 'vue';
+import { ref, onMounted, watch } from 'vue';
+import { useRoute } from 'vue-router';
 import ProductCard from '@/components/ProductCard.vue';
 import axios from 'axios';
 
-const popularProducts = ref([]);
+const route = useRoute();
+const categoryId = ref(route.params.id);
+const categoryName = ref('');
+const products = ref([]);
 const loading = ref(true);
 const error = ref(null);
 
-// Función para cargar los productos más vendidos
-const loadPopularProducts = async () => {
+// Cargar información de la categoría
+const loadCategory = async () => {
+  try {
+    const response = await axios.get(`${import.meta.env.VITE_API_URL}/categories/show/${categoryId.value}`);
+    categoryName.value = response.data.category.name;
+  } catch (err) {
+    console.error('Error al cargar la categoría:', err);
+  }
+};
+
+// Cargar productos de la categoría ordenados por popularidad
+const loadCategoryProducts = async () => {
   loading.value = true;
   error.value = null;
   
   try {
-    const response = await axios.get(`${import.meta.env.VITE_API_URL}/products/popular`, {
+    const response = await axios.get(`${import.meta.env.VITE_API_URL}/products/list`, {
       params: {
-        limit: 20,
-        use_ratio: true
+        category: categoryId.value,
+        sort: 'popularity',
+        limit: 20
       }
     });
     
-    popularProducts.value = response.data.products || [];
-    
-    // Si no hay productos, intentar sin ratio
-    if (popularProducts.value.length === 0) {
-      const fallbackResponse = await axios.get(`${import.meta.env.VITE_API_URL}/products/popular`, {
-        params: {
-          limit: 20,
-          use_ratio: false
-        }
-      });
-      
-      popularProducts.value = fallbackResponse.data.products || [];
-    }
+    products.value = response.data.products || [];
   } catch (err) {
-    console.error('Error al cargar productos populares:', err);
-    
-    // Intentar sin ratio si hay un error
-    try {
-      const fallbackResponse = await axios.get(`${import.meta.env.VITE_API_URL}/products/popular`, {
-        params: {
-          limit: 20,
-          use_ratio: false
-        }
-      });
-      
-      popularProducts.value = fallbackResponse.data.products || [];
-    } catch (fallbackErr) {
-      console.error('Error en fallback:', fallbackErr);
-      error.value = 'No se pudieron cargar los productos. Por favor, inténtalo de nuevo más tarde.';
-    }
+    console.error('Error al cargar productos de la categoría:', err);
+    error.value = 'No se pudieron cargar los productos. Por favor, inténtalo de nuevo más tarde.';
   } finally {
     loading.value = false;
   }
 };
 
-// Cargar productos al montar el componente
+// Cargar datos al montar el componente
 onMounted(() => {
-  loadPopularProducts();
+  loadCategory();
+  loadCategoryProducts();
+});
+
+// Observar cambios en el ID de categoría para recargar los datos
+watch(() => route.params.id, (newId) => {
+  categoryId.value = newId;
+  loadCategory();
+  loadCategoryProducts();
 });
 </script>
 
 <template>
   <div class="page-container">
-
-    
     <section>
-      <h1 class="section-title">Productos más vendidos</h1>
+      <h1 class="section-title">{{ categoryName }}</h1>
       
       <!-- Spinner de carga -->
       <div v-if="loading" class="loading-container">
         <img src="@/assets/images/spinner.gif" alt="Cargando..." class="spinner-gif" />
-        <p>Cargando productos populares...</p>
+        <p>Cargando productos...</p>
       </div>
       
       <!-- Mensaje de error -->
@@ -80,22 +75,21 @@ onMounted(() => {
       </div>
       
       <!-- Cuadrícula de productos -->
-      <div v-else-if="popularProducts.length > 0" class="products-grid">
-        <div v-for="product in popularProducts" :key="product.id" class="product-item">
+      <div v-else-if="products.length > 0" class="products-grid">
+        <div v-for="product in products" :key="product.id" class="product-item">
           <ProductCard :product="product" />
         </div>
       </div>
       
       <!-- Mensaje cuando no hay productos -->
       <div v-else class="no-products-message">
-        No hay productos populares disponibles en este momento.
+        No hay productos disponibles en esta categoría.
       </div>
     </section>
   </div>
 </template>
 
 <style scoped>
-
 .section-title {
   font-size: 2rem;
   color: var(--color-primary);
@@ -161,5 +155,3 @@ onMounted(() => {
   color: var(--color-text-light);
 }
 </style>
-
-

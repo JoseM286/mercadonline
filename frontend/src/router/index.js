@@ -49,6 +49,11 @@ const router = createRouter({
       component: () => import('../views/ProfileView.vue'),
       meta: { requiresAuth: true }
     },
+    {
+      path: '/category/:id',
+      name: 'category',
+      component: () => import('../views/CategoryView.vue'),
+    },
   ],
 })
 
@@ -72,6 +77,7 @@ router.beforeEach((to, from, next) => {
 })
 
 export default router
+
 
 
 

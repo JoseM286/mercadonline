@@ -125,8 +125,8 @@ const handleLogout = async () => {
     <!-- Franja inferior - Categorías -->
     <nav class="categories-nav">
       <ul class="categories-list">
-        <li><a href="#" class="category-link">Bebidas</a></li>
-        <li><a href="#" class="category-link">Frutas y Verduras</a></li>
+        <li><router-link :to="{ name: 'category', params: { id: 1 } }" class="category-link">Bebidas</router-link></li>
+        <li><router-link :to="{ name: 'category', params: { id: 2 } }" class="category-link">Frutas y Verduras</router-link></li>
         <li><a href="#" class="category-link">Carnes y Aves</a></li>
         <li><a href="#" class="category-link">Pescados y Mariscos</a></li>
         <li><a href="#" class="category-link">Lácteos y Huevos</a></li>
@@ -341,5 +341,7 @@ const handleLogout = async () => {
   }
 }
 </style>
+
+
 
 
