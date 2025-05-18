@@ -127,12 +127,12 @@ const handleLogout = async () => {
       <ul class="categories-list">
         <li><router-link :to="{ name: 'category', params: { id: 1 } }" class="category-link">Bebidas</router-link></li>
         <li><router-link :to="{ name: 'category', params: { id: 2 } }" class="category-link">Frutas y Verduras</router-link></li>
-        <li><a href="#" class="category-link">Carnes y Aves</a></li>
-        <li><a href="#" class="category-link">Pescados y Mariscos</a></li>
-        <li><a href="#" class="category-link">Lácteos y Huevos</a></li>
-        <li><a href="#" class="category-link">Panadería y Repostería</a></li>
-        <li><a href="#" class="category-link">Despensa</a></li>
-        <li><a href="#" class="category-link">Hogar y Limpieza</a></li>
+        <li><router-link :to="{ name: 'category', params: { id: 3 } }" class="category-link">Carnes y Aves</router-link></li>
+        <li><router-link :to="{ name: 'category', params: { id: 4 } }" class="category-link">Pescados y Mariscos</router-link></li>
+        <li><router-link :to="{ name: 'category', params: { id: 5 } }" class="category-link">Lácteos y Huevos</router-link></li>
+        <li><router-link :to="{ name: 'category', params: { id: 6 } }" class="category-link">Panadería y Repostería</router-link></li>
+        <li><router-link :to="{ name: 'category', params: { id: 7 } }" class="category-link">Despensa</router-link></li>
+        <li><router-link :to="{ name: 'category', params: { id: 8 } }" class="category-link">Hogar y Limpieza</router-link></li>
       </ul>
     </nav>
   </header>
