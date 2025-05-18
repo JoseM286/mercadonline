@@ -82,7 +82,7 @@ class ProductRepository extends ServiceEntityRepository
         // Si no existe, usamos una consulta más simple
         try {
             $sql = '
-                SELECT p.id, p.name, p.description, p.price, p.stock, p.sales, 
+                SELECT p.id, p.name, p.description, p.price, p.stock, p.sales, p.image_path,
                        c.id as category_id, c.name as category_name,
                        CASE 
                          WHEN p.created_at IS NOT NULL THEN p.sales / GREATEST(DATEDIFF(CURRENT_DATE(), p.created_at) / 30, 1)
@@ -134,6 +134,7 @@ class ProductRepository extends ServiceEntityRepository
                 'price' => $product->getPrice(),
                 'stock' => $product->getStock(),
                 'sales' => $product->getSales(),
+                'image_path' => $product->getImagePath(),
                 'category' => [
                     'id' => $product->getCategory()->getId(),
                     'name' => $product->getCategory()->getName()
@@ -144,6 +145,7 @@ class ProductRepository extends ServiceEntityRepository
         return $result;
     }
 }
+
 
 
 

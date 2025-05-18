@@ -36,6 +36,9 @@ class Product
     #[ORM\Column(type: 'datetime', nullable: true)]
     private ?\DateTimeInterface $created_at = null;
 
+    #[ORM\Column(length: 255, nullable: true)]
+    private ?string $image_path = null;
+
     // Constructor para inicializar created_at
     public function __construct()
     {
@@ -139,7 +142,17 @@ class Product
 
         return $this;
     }
+
+    public function getImagePath(): ?string
+    {
+        return $this->image_path;
+    }
+
+    public function setImagePath(?string $image_path): static
+    {
+        $this->image_path = $image_path;
+
+        return $this;
+    }
 }
-
-
 

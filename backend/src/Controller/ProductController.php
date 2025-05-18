@@ -67,6 +67,7 @@ class ProductController extends AbstractController
                 'description' => $product->getDescription(),
                 'price' => $product->getPrice(),
                 'stock' => $product->getStock(),
+                'image_path' => $product->getImagePath(),
                 'category' => [
                     'id' => $product->getCategory()->getId(),
                     'name' => $product->getCategory()->getName()
@@ -103,6 +104,7 @@ class ProductController extends AbstractController
                 'description' => $product->getDescription(),
                 'price' => $product->getPrice(),
                 'stock' => $product->getStock(),
+                'image_path' => $product->getImagePath(),
                 'category' => [
                     'id' => $product->getCategory()->getId(),
                     'name' => $product->getCategory()->getName()
@@ -139,6 +141,11 @@ class ProductController extends AbstractController
             $product->setPrice((string)$data['price']);
             $product->setStock((int)$data['stock']);
             $product->setCategory($category);
+            
+            // Añadir imagen si se proporciona
+            if (isset($data['image_path'])) {
+                $product->setImagePath($data['image_path']);
+            }
 
             $this->entityManager->persist($product);
             $this->entityManager->flush();
@@ -151,6 +158,7 @@ class ProductController extends AbstractController
                     'description' => $product->getDescription(),
                     'price' => $product->getPrice(),
                     'stock' => $product->getStock(),
+                    'image_path' => $product->getImagePath(),
                     'category' => [
                         'id' => $product->getCategory()->getId(),
                         'name' => $product->getCategory()->getName()
@@ -194,6 +202,10 @@ class ProductController extends AbstractController
             if (isset($data['stock'])) {
                 $product->setStock((int)$data['stock']);
             }
+            
+            if (isset($data['image_path'])) {
+                $product->setImagePath($data['image_path']);
+            }
 
             if (isset($data['category_id'])) {
                 $category = $this->categoryRepository->find($data['category_id']);
@@ -215,6 +227,7 @@ class ProductController extends AbstractController
                     'description' => $product->getDescription(),
                     'price' => $product->getPrice(),
                     'stock' => $product->getStock(),
+                    'image_path' => $product->getImagePath(),
                     'category' => [
                         'id' => $product->getCategory()->getId(),
                         'name' => $product->getCategory()->getName()
@@ -280,6 +293,7 @@ class ProductController extends AbstractController
                         'price' => $product->getPrice(),
                         'stock' => $product->getStock(),
                         'sales' => $product->getSales(),
+                        'image_path' => $product->getImagePath(),
                         'category' => [
                             'id' => $product->getCategory()->getId(),
                             'name' => $product->getCategory()->getName()
@@ -302,10 +316,5 @@ class ProductController extends AbstractController
         }
     }
 }
-
-
-
-
-
 
 
