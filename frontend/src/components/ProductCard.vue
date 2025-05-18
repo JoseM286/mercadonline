@@ -118,12 +118,12 @@ const handleImageError = () => {
 .product-price {
   font-size: 1.2rem;
   font-weight: 700;
-  color: var(--color-primary);
+  color: #2c5e1a; /* Color verde oscuro para el precio */
   margin: 8px 0 0 0;
 }
 
 .add-to-cart-btn {
-  background-color: var(--color-primary);
+  background-color: #3a7a23; /* Color verde claro del header */
   color: white;
   border: none;
   padding: 10px;
@@ -134,6 +134,6 @@ const handleImageError = () => {
 }
 
 .add-to-cart-btn:hover {
-  background-color: var(--color-primary-dark);
+  background-color: #4a9a2e; /* Verde más claro al pasar el cursor */
 }
 </style>

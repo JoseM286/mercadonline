@@ -3,7 +3,7 @@
 import { useRouter } from 'vue-router';
 import { useAuthStore } from '@/router/auth';
 import authService from '@/services/authService';
-import { computed } from 'vue';
+import { computed, ref } from 'vue';
 
 const router = useRouter();
 const authStore = useAuthStore();
@@ -11,6 +11,31 @@ const authStore = useAuthStore();
 // Estado de autenticación
 const isAuthenticated = computed(() => authStore.isAuthenticated);
 const userName = computed(() => authStore.user?.name || 'Usuario');
+
+// Estado para el buscador
+const searchQuery = ref('');
+const selectedCategory = ref('');
+
+// Función para realizar la búsqueda
+const handleSearch = () => {
+  if (!searchQuery.value.trim()) return;
+  
+  const query = {
+    search: searchQuery.value,
+    sort: 'popularity'
+  };
+  
+  // Añadir categoría si está seleccionada
+  if (selectedCategory.value) {
+    query.category = selectedCategory.value;
+  }
+  
+  // Navegar a la página de resultados de búsqueda con los parámetros
+  router.push({ 
+    name: 'search-results',
+    query
+  });
+};
 
 // Funciones de navegación
 const goToHome = () => {
@@ -77,19 +102,25 @@ const handleLogout = async () => {
 
       <div class="search-container">
         <div class="search-box">
-          <input type="text" placeholder="Buscar productos..." class="search-input" />
-          <select class="category-select">
+          <input 
+            type="text" 
+            placeholder="Buscar productos..." 
+            class="search-input" 
+            v-model="searchQuery"
+            @keyup.enter="handleSearch"
+          />
+          <select class="category-select" v-model="selectedCategory">
             <option value="">Todas las categorías</option>
-            <option value="bebidas">Bebidas</option>
-            <option value="frutas-verduras">Frutas y Verduras</option>
-            <option value="carnes-aves">Carnes y Aves</option>
-            <option value="pescados-mariscos">Pescados y Mariscos</option>
-            <option value="lacteos-huevos">Lácteos y Huevos</option>
-            <option value="panaderia-reposteria">Panadería y Repostería</option>
-            <option value="despensa">Despensa</option>
-            <option value="hogar-limpieza">Hogar y Limpieza</option>
+            <option value="1">Bebidas</option>
+            <option value="2">Frutas y Verduras</option>
+            <option value="3">Carnes y Aves</option>
+            <option value="4">Pescados y Mariscos</option>
+            <option value="5">Lácteos y Huevos</option>
+            <option value="6">Panadería y Repostería</option>
+            <option value="7">Despensa</option>
+            <option value="8">Hogar y Limpieza</option>
           </select>
-          <button class="search-button">Buscar</button>
+          <button class="search-button" @click="handleSearch">Buscar</button>
         </div>
       </div>
 

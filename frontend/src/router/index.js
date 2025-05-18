@@ -54,6 +54,11 @@ const router = createRouter({
       name: 'category',
       component: () => import('../views/CategoryView.vue'),
     },
+    {
+      path: '/search',
+      name: 'search-results',
+      component: () => import('../views/SearchResultsView.vue')
+    },
   ],
 })
 
@@ -77,6 +82,7 @@ router.beforeEach((to, from, next) => {
 })
 
 export default router
+
 
 
 
