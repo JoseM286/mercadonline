@@ -41,6 +41,12 @@ docker-compose up -d
 docker-compose ps
 docker-compose logs -f frontend
 ```
+6. Importar BDD:
+
+```bash
+docker-compose exec mysql mysql -u root -proot -e "DROP DATABASE mercadonline; CREATE DATABASE mercadonline;
+docker-compose exec -T mysql mysql -u root -proot mercadonline < backup.sql
+```
 
 ## Puertos utilizados
 
