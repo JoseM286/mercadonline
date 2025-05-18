@@ -30,6 +30,32 @@ class Product
     #[ORM\JoinColumn(nullable: false)]
     private ?Category $category = null;
 
+    #[ORM\Column]
+    private ?int $sales = 0;
+
+    #[ORM\Column(type: 'datetime', nullable: true)]
+    private ?\DateTimeInterface $created_at = null;
+
+    // Constructor para inicializar created_at
+    public function __construct()
+    {
+        $this->created_at = new \DateTime();
+        $this->sales = 0;
+    }
+
+    // Getter y setter para created_at
+    public function getCreatedAt(): ?\DateTimeInterface
+    {
+        return $this->created_at;
+    }
+
+    public function setCreatedAt(?\DateTimeInterface $created_at): static
+    {
+        $this->created_at = $created_at;
+
+        return $this;
+    }
+
     public function getId(): ?int
     {
         return $this->id;
@@ -94,4 +120,26 @@ class Product
 
         return $this;
     }
+
+    public function getSales(): ?int
+    {
+        return $this->sales;
+    }
+
+    public function setSales(int $sales): static
+    {
+        $this->sales = $sales;
+
+        return $this;
+    }
+
+    public function incrementSales(int $quantity = 1): static
+    {
+        $this->sales += $quantity;
+
+        return $this;
+    }
 }
+
+
+

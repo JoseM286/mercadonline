@@ -245,4 +245,55 @@ class ProductController extends AbstractController
             ], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
+
+    #[Route('/popular', name: 'app_product_popular', methods: ['GET'])]
+    public function getPopularProducts(Request $request): JsonResponse
+    {
+        try {
+            // Parámetros
+            $limit = min(50, $request->query->getInt('limit', 20));
+            $useRatio = $request->query->getBoolean('use_ratio', true);
+            
+            // Obtener productos populares
+            if ($useRatio) {
+                // Usando ratio de ventas por mes
+                $productsData = $this->productRepository->findMostPopularProductsWithRatio($limit);
+            } else {
+                // Usando solo el total de ventas
+                $products = $this->productRepository->findMostPopularProducts($limit);
+                
+                // Formatear respuesta
+                $productsData = [];
+                foreach ($products as $product) {
+                    $productsData[] = [
+                        'id' => $product->getId(),
+                        'name' => $product->getName(),
+                        'description' => $product->getDescription(),
+                        'price' => $product->getPrice(),
+                        'stock' => $product->getStock(),
+                        'sales' => $product->getSales(),
+                        'category' => [
+                            'id' => $product->getCategory()->getId(),
+                            'name' => $product->getCategory()->getName()
+                        ]
+                    ];
+                }
+            }
+            
+            return $this->json([
+                'products' => $productsData
+            ]);
+        } catch (\Exception $e) {
+            // Log del error para debugging
+            error_log('Error en getPopularProducts: ' . $e->getMessage());
+            
+            return $this->json([
+                'error' => 'Error al obtener los productos populares',
+                'message' => $e->getMessage()
+            ], Response::HTTP_INTERNAL_SERVER_ERROR);
+        }
+    }
 }
+
+
+

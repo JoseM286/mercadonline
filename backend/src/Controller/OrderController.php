@@ -181,6 +181,9 @@ class OrderController extends AbstractController
                     ], Response::HTTP_BAD_REQUEST);
                 }
 
+                // Incrementar contador de ventas del producto
+                $product->incrementSales($quantity);
+
                 // Crear item del pedido
                 $orderItem = new OrderItem();
                 $orderItem->setOrderRef($order);
@@ -262,10 +265,26 @@ class OrderController extends AbstractController
             $order->setStatus(self::STATUS_CANCELLED);
             $order->setUpdatedAt(new \DateTime());
 
-            // Restaurar stock
-            foreach ($order->getOrderItems() as $item) {
-                $product = $item->getProduct();
-                $product->setStock($product->getStock() + $item->getQuantity());
+            // Restaurar stock y decrementar ventas
+            foreach ($order->getOrderItems() as $orderItem) {
+                $product = $orderItem->getProduct();
+                $itemQuantity = $orderItem->getQuantity();
+                
+                // Restaurar stock
+                $product->setStock($product->getStock() + $itemQuantity);
+                
+                // Decrementar contador de ventas
+                // Solo si el pedido estaba en estado PAID, PROCESSING, SHIPPED o DELIVERED
+                if (in_array($order->getStatus(), [
+                    self::STATUS_PAID, 
+                    self::STATUS_PROCESSING, 
+                    self::STATUS_SHIPPED, 
+                    self::STATUS_DELIVERED
+                ])) {
+                    // Asegurarse de que no quede negativo
+                    $newSales = max(0, $product->getSales() - $itemQuantity);
+                    $product->setSales($newSales);
+                }
             }
 
             // Confirmar transacción
@@ -333,11 +352,26 @@ class OrderController extends AbstractController
         }
 
         try {
-            // Si se está cancelando el pedido, restaurar stock
+            // Si se está cancelando el pedido, restaurar stock y decrementar ventas
             if ($status === self::STATUS_CANCELLED && $order->getStatus() !== self::STATUS_CANCELLED) {
-                foreach ($order->getOrderItems() as $item) {
-                    $product = $item->getProduct();
-                    $product->setStock($product->getStock() + $item->getQuantity());
+                foreach ($order->getOrderItems() as $orderItem) {
+                    $product = $orderItem->getProduct();
+                    $itemQuantity = $orderItem->getQuantity();
+                    
+                    // Restaurar stock
+                    $product->setStock($product->getStock() + $itemQuantity);
+                    
+                    // Decrementar contador de ventas si el pedido estaba en un estado avanzado
+                    if (in_array($order->getStatus(), [
+                        self::STATUS_PAID, 
+                        self::STATUS_PROCESSING, 
+                        self::STATUS_SHIPPED, 
+                        self::STATUS_DELIVERED
+                    ])) {
+                        // Asegurarse de que no quede negativo
+                        $newSales = max(0, $product->getSales() - $itemQuantity);
+                        $product->setSales($newSales);
+                    }
                 }
             }
 
@@ -423,3 +457,7 @@ class OrderController extends AbstractController
         ]);
     }
 }
+
+
+
+
