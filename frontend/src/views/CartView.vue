@@ -293,6 +293,11 @@ const getImageUrl = (imagePath) => {
   align-items: center;
   justify-content: center;
   font-weight: bold;
+  transition: background-color 0.2s;
+}
+
+.quantity-btn:hover {
+  background-color: #f0f0f0;
 }
 
 .quantity-btn:disabled {
@@ -353,7 +358,7 @@ const getImageUrl = (imagePath) => {
 .checkout-btn {
   width: 100%;
   padding: var(--spacing-md);
-  background-color: var(--color-primary);
+  background-color: #3a7a23;
   color: white;
   border: none;
   border-radius: 4px;
@@ -365,14 +370,14 @@ const getImageUrl = (imagePath) => {
 }
 
 .checkout-btn:hover {
-  background-color: var(--color-primary-dark);
+  background-color: #4a9a2e;
 }
 
 .continue-shopping-link {
   display: block;
   text-align: center;
   margin-top: var(--spacing-md);
-  color: var(--color-primary);
+  color: #3a7a23;
   text-decoration: none;
 }
 
@@ -380,4 +385,5 @@ const getImageUrl = (imagePath) => {
   text-decoration: underline;
 }
 </style>
+
 

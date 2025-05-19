@@ -132,6 +132,7 @@ const getImageUrl = (imagePath) => {
   color: var(--color-text);
   display: -webkit-box;
   -webkit-line-clamp: 2;
+  line-clamp: 2;
   -webkit-box-orient: vertical;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -166,6 +167,7 @@ const getImageUrl = (imagePath) => {
   background-color: #4a9a2e; /* Verde más claro al pasar el cursor */
 }
 </style>
+
 
 
 

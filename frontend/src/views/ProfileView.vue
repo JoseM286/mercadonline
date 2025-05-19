@@ -324,7 +324,7 @@ const updateProfile = async () => {
 
 .update-button {
   padding: 10px 20px;
-  background-color: var(--color-primary);
+  background-color: #3a7a23;
   color: white;
   border: none;
   border-radius: var(--border-radius);
@@ -334,11 +334,11 @@ const updateProfile = async () => {
 }
 
 .update-button:hover {
-  background-color: var(--color-primary-dark);
+  background-color: #4a9a2e;
 }
 
 .update-button:disabled {
-  background-color: var(--color-primary-light);
+  background-color: #8abb7d;
   cursor: not-allowed;
 }
 
@@ -387,5 +387,6 @@ const updateProfile = async () => {
   height: 80px;
 }
 </style>
+
 
 
