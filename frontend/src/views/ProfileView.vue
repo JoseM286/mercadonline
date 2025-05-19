@@ -4,6 +4,7 @@ import { useRouter } from 'vue-router';
 import { useAuthStore } from '@/router/auth';
 import userService from '@/services/userService';
 import authService from '@/services/authService';
+import ModalFeedback from '@/components/ModalFeedback.vue';
 
 const router = useRouter();
 const authStore = useAuthStore();
@@ -15,6 +16,12 @@ const formStatus = ref({
   isSuccess: false,
   loading: false
 });
+
+// Estado del modal de feedback
+const showModal = ref(false);
+const modalTitle = ref('Felicidades!!');
+const modalText = ref('Has actualizado tu perfil');
+const modalType = ref('success');
 
 // Datos del perfil
 const profile = ref({
@@ -88,6 +95,11 @@ const handleLogout = async () => {
   }
 };
 
+// Función para cerrar el modal
+const closeModal = () => {
+  showModal.value = false;
+};
+
 // Función para actualizar el perfil
 const updateProfile = async () => {
   formStatus.value.loading = true;
@@ -108,9 +120,8 @@ const updateProfile = async () => {
       authStore.setUser(response.user);
     }
 
-    // Mostrar mensaje de éxito
-    formStatus.value.message = 'Perfil actualizado correctamente';
-    formStatus.value.isSuccess = true;
+    // Mostrar modal de éxito en lugar del mensaje
+    showModal.value = true;
   } catch (error) {
     console.error('Error al actualizar el perfil:', error);
     formStatus.value.message = error.message || 'Error al actualizar el perfil';
@@ -155,11 +166,8 @@ const updateProfile = async () => {
               <p>Actualizando perfil...</p>
             </div>
 
-            <!-- Mensaje de estado del formulario -->
-            <div v-if="formStatus.message"
-                 :class="['status-message',
-                         {'error-message': formStatus.isError,
-                          'success-message': formStatus.isSuccess}]">
+            <!-- Mensaje de error (mantenemos solo este) -->
+            <div v-if="formStatus.isError" class="status-message error-message">
               {{ formStatus.message }}
             </div>
 
@@ -217,6 +225,17 @@ const updateProfile = async () => {
         </div>
       </div>
     </div>
+
+    <!-- Modal de feedback para actualización exitosa -->
+    <ModalFeedback
+      :title="modalTitle"
+      :text="modalText"
+      :type="modalType"
+      :is-open="showModal"
+      :auto-close="true"
+      :auto-close-time="3000"
+      @close="closeModal"
+    />
   </div>
 </template>
 
@@ -387,6 +406,7 @@ const updateProfile = async () => {
   height: 80px;
 }
 </style>
+
 
 
 
