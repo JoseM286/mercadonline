@@ -94,12 +94,13 @@ const getImageUrl = (imagePath) => {
   justify-content: center;
   background-color: #f8f8f8;
   cursor: pointer;
+  position: relative;
 }
 
 .product-image img {
   width: 100%;
   height: 100%;
-  object-fit: cover;
+  object-fit: contain;
   transition: transform 0.3s ease;
 }
 
@@ -165,5 +166,7 @@ const getImageUrl = (imagePath) => {
   background-color: #4a9a2e; /* Verde más claro al pasar el cursor */
 }
 </style>
+
+
 
 
