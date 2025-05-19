@@ -8,21 +8,21 @@ const cartItems = ref([
     name: 'Manzanas Rojas',
     price: 2.99,
     quantity: 2,
-    image: '/images/apple.jpg'
+    image_path: 'apple.jpg'
   },
   {
     id: 2,
     name: 'Plátanos',
     price: 1.49,
     quantity: 3,
-    image: '/images/banana.jpg'
+    image_path: 'banana.jpg'
   },
   {
     id: 3,
     name: 'Leche Entera',
     price: 1.29,
     quantity: 1,
-    image: '/images/milk.jpg'
+    image_path: 'milk.jpg'
   }
 ]);
 
@@ -52,6 +52,19 @@ const removeItem = (itemId) => {
 const checkout = () => {
   alert('Redirigiendo al proceso de pago...');
   // Aquí iría la lógica para redirigir al proceso de pago
+};
+
+// Función para obtener la URL de la imagen
+const getImageUrl = (imagePath) => {
+  if (!imagePath) return null;
+  
+  try {
+    // Intentar importar la imagen desde assets
+    return new URL(`../assets/images/${imagePath}`, import.meta.url).href;
+  } catch (error) {
+    console.error('Error loading image:', error);
+    return null;
+  }
 };
 </script>
 
@@ -84,8 +97,12 @@ const checkout = () => {
             <div v-for="item in cartItems" :key="item.id" class="cart-item">
               <div class="cart-item-product">
                 <div class="cart-item-image">
-                  <!-- Placeholder para la imagen -->
-                  <div class="image-placeholder">🥕</div>
+                  <img 
+                    v-if="item.image_path" 
+                    :src="getImageUrl(item.image_path)" 
+                    :alt="item.name"
+                  />
+                  <div v-else class="image-placeholder">🥕</div>
                 </div>
                 <div class="cart-item-details">
                   <h3>{{ item.name }}</h3>
@@ -363,3 +380,4 @@ const checkout = () => {
   text-decoration: underline;
 }
 </style>
+

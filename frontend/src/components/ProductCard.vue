@@ -16,32 +16,53 @@ const goToProductDetail = () => {
   router.push(`/product/${props.product.id}`);
 };
 
+// Función para añadir al carrito
+const addToCart = (event) => {
+  // Detener la propagación para evitar que se active goToProductDetail
+  event.stopPropagation();
+  // Aquí iría la lógica para añadir al carrito
+  console.log('Añadir al carrito:', props.product.id);
+};
+
 // Placeholder para cuando la imagen no carga
 const imageError = ref(false);
 const handleImageError = () => {
   imageError.value = true;
 };
+
+// Función para obtener la URL de la imagen
+const getImageUrl = (imagePath) => {
+  if (!imagePath) return null;
+  
+  try {
+    // Intentar importar la imagen desde assets
+    return new URL(`../assets/images/${imagePath}`, import.meta.url).href;
+  } catch (error) {
+    console.error('Error loading image:', error);
+    return null;
+  }
+};
 </script>
 
 <template>
-  <div class="product-card" @click="goToProductDetail">
-    <div class="product-image">
+  <div class="product-card">
+    <div class="product-image" @click="goToProductDetail">
       <img
-        v-if="!imageError && product.image"
-        :src="product.image"
+        v-if="!imageError && product.image_path"
+        :src="getImageUrl(product.image_path)"
         :alt="product.name"
         @error="handleImageError"
       />
-      <div v-else class="image-placeholder">
+      <div v-else class="image-placeholder" @click="goToProductDetail">
         <span>🛒</span>
       </div>
     </div>
-    <div class="product-info">
+    <div class="product-info" @click="goToProductDetail">
       <h3 class="product-name">{{ product.name }}</h3>
       <p class="product-category">{{ product.category.name }}</p>
       <p class="product-price">{{ parseFloat(product.price).toFixed(2) }}€</p>
     </div>
-    <button class="add-to-cart-btn">
+    <button class="add-to-cart-btn" @click.stop="addToCart">
       Añadir al carrito
     </button>
   </div>
@@ -72,12 +93,18 @@ const handleImageError = () => {
   align-items: center;
   justify-content: center;
   background-color: #f8f8f8;
+  cursor: pointer;
 }
 
 .product-image img {
   width: 100%;
   height: 100%;
   object-fit: cover;
+  transition: transform 0.3s ease;
+}
+
+.product-image img:hover {
+  transform: scale(1.05);
 }
 
 .image-placeholder {
@@ -94,6 +121,7 @@ const handleImageError = () => {
 .product-info {
   padding: 15px;
   flex-grow: 1;
+  cursor: pointer;
 }
 
 .product-name {
@@ -137,3 +165,5 @@ const handleImageError = () => {
   background-color: #4a9a2e; /* Verde más claro al pasar el cursor */
 }
 </style>
+
+

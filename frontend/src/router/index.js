@@ -1,8 +1,9 @@
 import { createRouter, createWebHistory } from 'vue-router'
-import { useAuthStore } from './auth'
 import HomeView from '../views/HomeView.vue'
 import AboutView from '../views/AboutView.vue'
 import ContactView from '../views/ContactView.vue'
+import ProductDetailView from '../views/ProductDetailView.vue'
+import { useAuthStore } from './auth' // Importamos el store de autenticación
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -21,6 +22,11 @@ const router = createRouter({
       path: '/contact',
       name: 'contact',
       component: ContactView,
+    },
+    {
+      path: '/product/:id',
+      name: 'product-detail',
+      component: ProductDetailView,
     },
     {
       path: '/login',
@@ -64,6 +70,7 @@ const router = createRouter({
 
 // Navegación guard para proteger rutas
 router.beforeEach((to, from, next) => {
+  // Obtenemos el store dentro del guard, no durante la configuración
   const authStore = useAuthStore()
   
   // Si la ruta requiere autenticación y el usuario no está autenticado
@@ -82,6 +89,9 @@ router.beforeEach((to, from, next) => {
 })
 
 export default router
+
+
+
 
 
 
