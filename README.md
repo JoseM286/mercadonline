@@ -6,6 +6,7 @@
 - Docker Compose
 
 ## Instalación y ejecución
+Todos los comandos son funcionales en bash
 
 1. Clonar el repositorio:
 
