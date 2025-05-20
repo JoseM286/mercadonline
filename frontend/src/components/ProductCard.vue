@@ -1,5 +1,7 @@
 <script setup>
 import { ref } from 'vue';
+import axios from 'axios';
+import { useAuthStore } from '@/router/auth';
 import { useRouter } from 'vue-router';
 
 const props = defineProps({
@@ -10,6 +12,7 @@ const props = defineProps({
 });
 
 const router = useRouter();
+const authStore = useAuthStore();
 
 // Función para navegar al detalle del producto
 const goToProductDetail = () => {
@@ -17,11 +20,40 @@ const goToProductDetail = () => {
 };
 
 // Función para añadir al carrito
-const addToCart = (event) => {
+const addToCart = async (event) => {
   // Detener la propagación para evitar que se active goToProductDetail
   event.stopPropagation();
-  // Aquí iría la lógica para añadir al carrito
-  console.log('Añadir al carrito:', props.product.id);
+  
+  try {
+    // Verificar si el usuario está autenticado
+    if (!authStore.isAuthenticated) {
+      // Redirigir al login si no está autenticado
+      router.push('/login');
+      return;
+    }
+    
+    // Verificar stock disponible
+    if (props.product.stock < 1) {
+      alert('No hay stock disponible');
+      return;
+    }
+    
+    console.log('Enviando producto al carrito:', props.product.id);
+    
+    // Enviar petición al backend
+    const response = await axios.post(`${import.meta.env.VITE_API_URL}/cart/add`, {
+      product_id: props.product.id,
+      quantity: 1 // Por defecto añadimos 1 unidad desde la tarjeta
+    });
+    
+    console.log('Respuesta al añadir al carrito:', response.data);
+    
+    // Mostrar mensaje de éxito
+    alert('Producto añadido al carrito correctamente');
+  } catch (err) {
+    console.error('Error al añadir al carrito:', err);
+    alert('Error al añadir el producto al carrito. Por favor, inténtalo de nuevo.');
+  }
 };
 
 // Placeholder para cuando la imagen no carga
@@ -167,6 +199,9 @@ const getImageUrl = (imagePath) => {
   background-color: #4a9a2e; /* Verde más claro al pasar el cursor */
 }
 </style>
+
+
+
 
 
 

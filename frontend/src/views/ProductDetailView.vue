@@ -81,10 +81,12 @@
 
 <script setup>
 import { ref, onMounted } from 'vue';
-import { useRoute } from 'vue-router';
+import { useRoute, useRouter } from 'vue-router';
 import axios from 'axios';
+import { useAuthStore } from '@/router/auth';
 
 const route = useRoute();
+const router = useRouter();
 const productId = route.params.id;
 
 const product = ref(null);
@@ -92,6 +94,9 @@ const loading = ref(true);
 const error = ref(null);
 const quantity = ref(1);
 const imageError = ref(false);
+
+// Añadir el store de autenticación
+const authStore = useAuthStore();
 
 // Cargar detalles del producto
 const loadProductDetails = async () => {
@@ -110,9 +115,35 @@ const loadProductDetails = async () => {
 };
 
 // Función para añadir al carrito
-const addToCart = () => {
-  // Aquí iría la lógica para añadir al carrito
-  console.log(`Añadir ${quantity.value} unidades del producto ${productId} al carrito`);
+const addToCart = async () => {
+  try {
+    // Verificar si el usuario está autenticado
+    if (!authStore.isAuthenticated) {
+      // Redirigir al login si no está autenticado
+      router.push('/login');
+      return;
+    }
+    
+    // Verificar stock disponible
+    if (product.value.stock < quantity.value) {
+      error.value = 'No hay suficiente stock disponible';
+      return;
+    }
+    
+    // Enviar petición al backend
+    const response = await axios.post(`${import.meta.env.VITE_API_URL}/cart/add`, {
+      product_id: productId,
+      quantity: quantity.value
+    });
+    
+    // Mostrar mensaje de éxito (puedes usar un modal si lo prefieres)
+    alert('Producto añadido al carrito correctamente');
+    
+    console.log('Producto añadido al carrito:', response.data);
+  } catch (err) {
+    console.error('Error al añadir al carrito:', err);
+    error.value = 'Error al añadir el producto al carrito. Por favor, inténtalo de nuevo.';
+  }
 };
 
 // Placeholder para cuando la imagen no carga
@@ -325,3 +356,4 @@ onMounted(() => {
   background-color: #4a9a2e;
 }
 </style>
+

@@ -1,51 +1,69 @@
 <script setup>
-import { ref, computed } from 'vue';
+import { ref, computed, onMounted } from 'vue';
+import axios from 'axios';
+import { useRouter } from 'vue-router';
 
-// Simulación de productos en el carrito
-const cartItems = ref([
-  {
-    id: 1,
-    name: 'Manzanas Rojas',
-    price: 2.99,
-    quantity: 2,
-    image_path: 'apple.jpg'
-  },
-  {
-    id: 2,
-    name: 'Plátanos',
-    price: 1.49,
-    quantity: 3,
-    image_path: 'banana.jpg'
-  },
-  {
-    id: 3,
-    name: 'Leche Entera',
-    price: 1.29,
-    quantity: 1,
-    image_path: 'milk.jpg'
+const router = useRouter();
+const cartItems = ref([]);
+const loading = ref(true);
+const error = ref(null);
+
+// Cargar los productos del carrito
+const loadCartItems = async () => {
+  loading.value = true;
+  error.value = null;
+  
+  try {
+    const response = await axios.get(`${import.meta.env.VITE_API_URL}/cart/list`);
+    console.log('Respuesta del carrito:', response.data); // Añadir log para depuración
+    
+    // Corregir la estructura de datos según la respuesta real del backend
+    cartItems.value = response.data.items || [];
+  } catch (err) {
+    console.error('Error al cargar el carrito:', err);
+    error.value = 'No se pudo cargar el carrito. Por favor, inténtalo de nuevo más tarde.';
+  } finally {
+    loading.value = false;
   }
-]);
+};
 
 // Calcular el total del carrito
 const cartTotal = computed(() => {
   return cartItems.value.reduce((total, item) => {
-    return total + (item.price * item.quantity);
+    return total + (parseFloat(item.product.price) * item.quantity);
   }, 0).toFixed(2);
 });
 
 // Función para actualizar la cantidad
-const updateQuantity = (itemId, newQuantity) => {
+const updateQuantity = async (itemId, newQuantity) => {
   if (newQuantity < 1) return;
   
-  const item = cartItems.value.find(item => item.id === itemId);
-  if (item) {
-    item.quantity = newQuantity;
+  try {
+    await axios.put(`${import.meta.env.VITE_API_URL}/cart/update/${itemId}`, {
+      quantity: newQuantity
+    });
+    
+    // Actualizar la cantidad en el carrito local
+    const item = cartItems.value.find(item => item.id === itemId);
+    if (item) {
+      item.quantity = newQuantity;
+    }
+  } catch (err) {
+    console.error('Error al actualizar cantidad:', err);
+    alert('Error al actualizar la cantidad. Por favor, inténtalo de nuevo.');
   }
 };
 
 // Función para eliminar un producto del carrito
-const removeItem = (itemId) => {
-  cartItems.value = cartItems.value.filter(item => item.id !== itemId);
+const removeItem = async (itemId) => {
+  try {
+    await axios.delete(`${import.meta.env.VITE_API_URL}/cart/remove/${itemId}`);
+    // Eliminar el item del array local
+    cartItems.value = cartItems.value.filter(item => item.id !== itemId);
+  } catch (err) {
+    console.error('Error al eliminar producto:', err);
+    alert('Error al eliminar el producto. Por favor, inténtalo de nuevo.');
+  }
 };
 
 // Función para proceder al pago
@@ -60,12 +78,23 @@ const getImageUrl = (imagePath) => {
   
   try {
     // Intentar importar la imagen desde assets
+    // Primero verificamos si la imagen ya es una URL completa
+    if (imagePath.startsWith('http')) {
+      return imagePath;
+    }
+    
+    // Si no es una URL completa, intentamos cargarla desde assets
     return new URL(`../assets/images/${imagePath}`, import.meta.url).href;
   } catch (error) {
-    console.error('Error loading image:', error);
+    console.error('Error loading image:', error, imagePath);
     return null;
   }
 };
+
+// Cargar datos al montar el componente
+onMounted(() => {
+  loadCartItems();
+});
 </script>
 
 <template>  
@@ -76,7 +105,18 @@ const getImageUrl = (imagePath) => {
     </div>
 
     <div class="page-content">
-      <div class="cart-container">
+      <!-- Spinner de carga -->
+      <div v-if="loading" class="loading-container">
+        <img src="@/assets/images/spinner.gif" alt="Cargando..." class="spinner-gif" />
+        <p>Cargando carrito...</p>
+      </div>
+      
+      <!-- Mensaje de error -->
+      <div v-else-if="error" class="error-message">
+        {{ error }}
+      </div>
+      
+      <div v-else class="cart-container">
         <div v-if="cartItems.length === 0" class="empty-cart">
           <div class="empty-cart-icon">🛒</div>
           <h2>Tu carrito está vacío</h2>
@@ -98,19 +138,20 @@ const getImageUrl = (imagePath) => {
               <div class="cart-item-product">
                 <div class="cart-item-image">
                   <img 
-                    v-if="item.image_path" 
-                    :src="getImageUrl(item.image_path)" 
-                    :alt="item.name"
+                    v-if="item.product && item.product.image_path && getImageUrl(item.product.image_path)" 
+                    :src="getImageUrl(item.product.image_path)" 
+                    :alt="item.product.name"
+                    @error="$event.target.style.display = 'none'; $event.target.nextElementSibling.style.display = 'flex'"
                   />
                   <div v-else class="image-placeholder">🥕</div>
                 </div>
                 <div class="cart-item-details">
-                  <h3>{{ item.name }}</h3>
+                  <h3>{{ item.product ? item.product.name : 'Producto' }}</h3>
                 </div>
               </div>
               
               <div class="cart-item-price">
-                {{ item.price.toFixed(2) }}€
+                {{ item.product ? parseFloat(item.product.price).toFixed(2) : '0.00' }}€
               </div>
               
               <div class="cart-item-quantity">
@@ -131,44 +172,26 @@ const getImageUrl = (imagePath) => {
               </div>
               
               <div class="cart-item-total">
-                {{ (item.price * item.quantity).toFixed(2) }}€
+                {{ item.product ? (parseFloat(item.product.price) * item.quantity).toFixed(2) : '0.00' }}€
               </div>
               
               <div class="cart-item-actions">
                 <button class="remove-btn" @click="removeItem(item.id)">
-                  🗑️
+                  ✕
                 </button>
               </div>
             </div>
           </div>
-
+          
           <div class="cart-summary">
-            <div class="summary-card">
-              <h2>Resumen del pedido</h2>
-              
-              <div class="summary-row">
-                <span>Subtotal</span>
-                <span>{{ cartTotal }}€</span>
-              </div>
-              
-              <div class="summary-row">
-                <span>Gastos de envío</span>
-                <span>Gratis</span>
-              </div>
-              
-              <div class="summary-row total">
-                <span>Total</span>
-                <span>{{ cartTotal }}€</span>
-              </div>
-              
-              <button class="checkout-btn" @click="checkout">
-                Proceder al pago
-              </button>
-              
-              <router-link to="/" class="continue-shopping-link">
-                Continuar comprando
-              </router-link>
+            <div class="cart-total">
+              <span>Total:</span>
+              <span class="total-amount">{{ cartTotal }}€</span>
             </div>
+            
+            <button class="checkout-btn" @click="checkout">
+              Proceder al pago
+            </button>
           </div>
         </div>
       </div>
@@ -385,5 +408,6 @@ const getImageUrl = (imagePath) => {
   text-decoration: underline;
 }
 </style>
+
 
 
