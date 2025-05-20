@@ -108,7 +108,6 @@ onMounted(() => {
       <!-- Spinner de carga -->
       <div v-if="loading" class="loading-container">
         <img src="@/assets/images/spinner.gif" alt="Cargando..." class="spinner-gif" />
-        <p>Cargando carrito...</p>
       </div>
       
       <!-- Mensaje de error -->
@@ -138,7 +137,7 @@ onMounted(() => {
               <div class="cart-item-product">
                 <div class="cart-item-image">
                   <img 
-                    v-if="item.product && item.product.image_path && getImageUrl(item.product.image_path)" 
+                    v-if="item.product.image_path" 
                     :src="getImageUrl(item.product.image_path)" 
                     :alt="item.product.name"
                     @error="$event.target.style.display = 'none'; $event.target.nextElementSibling.style.display = 'flex'"
@@ -181,25 +180,44 @@ onMounted(() => {
                 </button>
               </div>
             </div>
-          </div>
-          
-          <div class="cart-summary">
-            <div class="cart-total">
-              <span>Total:</span>
-              <span class="total-amount">{{ cartTotal }}€</span>
-            </div>
             
-            <button class="checkout-btn" @click="checkout">
+            <div class="cart-footer">
+              <div class="cart-footer-empty"></div>
+              <div class="cart-footer-empty"></div>
+              <div class="cart-footer-empty"></div>
+              <div class="cart-total">
+                <span>Total:</span>
+                <span class="total-amount">{{ cartTotal }}€</span>
+              </div>
+              <div class="cart-footer-empty"></div>
+            </div>
+
+            <div class="cart-footer">
+              <div class="cart-footer-empty"></div>
+              <div class="cart-footer-empty"></div>
+              <div class="cart-footer-empty"></div>
+              <button class="checkout-btn" @click="checkout">
               Proceder al pago
             </button>
+              <div class="cart-footer-empty"></div>
+            </div>
+            
           </div>
-        </div>
+          </div>
       </div>
     </div>
   </div>
 </template>
 
 <style scoped>
+.loading-container{
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: var(--spacing-xl) 0;
+}
+
 .cart-container {
   margin-top: var(--spacing-lg);
 }
@@ -379,12 +397,13 @@ onMounted(() => {
 }
 
 .checkout-btn {
-  width: 100%;
+  width: 200px;
+  justify-content: center;
   padding: var(--spacing-md);
   background-color: #3a7a23;
   color: white;
   border: none;
-  border-radius: 4px;
+  border-radius: 20px;
   font-size: 1.1rem;
   font-weight: bold;
   cursor: pointer;
@@ -407,7 +426,53 @@ onMounted(() => {
 .continue-shopping-link:hover {
   text-decoration: underline;
 }
+
+.cart-item-image {
+  height: 150px;
+  width: 150px;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: #f8f8f8;
+  cursor: pointer;
+  position: relative;
+}
+
+.cart-item-image img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  transition: transform 0.3s ease;
+}
+
+.cart-item-image img:hover {
+  transform: scale(1.05);
+}
+
+.cart-footer {
+  display: grid;
+  grid-template-columns: 3fr 1fr 1fr 1fr 0.5fr;
+  padding: var(--spacing-md);
+  border-top: 2px solid #eee;
+  font-weight: bold;
+}
+
+.cart-total {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.total-amount {
+  font-size: 1.2rem;
+  color: #2c5e1a;
+}
 </style>
+
+
+
+
 
 
 

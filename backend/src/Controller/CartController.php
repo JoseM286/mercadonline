@@ -44,7 +44,8 @@ class CartController extends AbstractController
                 'product' => [
                     'id' => $product->getId(),
                     'name' => $product->getName(),
-                    'price' => $product->getPrice()
+                    'price' => $product->getPrice(),
+                    'image_path' => $product->getImagePath()
                 ],
                 'quantity' => $item->getQuantity(),
                 'subtotal' => $subtotal
@@ -126,7 +127,8 @@ class CartController extends AbstractController
                     'product' => [
                         'id' => $product->getId(),
                         'name' => $product->getName(),
-                        'price' => $product->getPrice()
+                        'price' => $product->getPrice(),
+                        'image_path' => $product->getImagePath()
                     ],
                     'quantity' => $cartItem->getQuantity(),
                     'subtotal' => $product->getPrice() * $cartItem->getQuantity()
@@ -187,7 +189,8 @@ class CartController extends AbstractController
                     'product' => [
                         'id' => $product->getId(),
                         'name' => $product->getName(),
-                        'price' => $product->getPrice()
+                        'price' => $product->getPrice(),
+                        'image_path' => $product->getImagePath()
                     ],
                     'quantity' => $cartItem->getQuantity(),
                     'subtotal' => $product->getPrice() * $cartItem->getQuantity()
