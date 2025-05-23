@@ -1,13 +1,19 @@
 <template>
   <div class="admin-products">
     <h1>Gestión de Productos</h1>
-    <p>En esta vista, los administradores podrán gestionar los productos del catálogo.</p>
+    <p>Administra los productos del catálogo, edita sus detalles o añade nuevos productos.</p>
     
     <div class="admin-controls">
-      <button class="btn-primary">Añadir Nuevo Producto</button>
+      <button class="btn-primary" @click="showAddProductModal = true">Añadir Nuevo Producto</button>
       <div class="search-filter">
-        <input type="text" placeholder="Buscar productos..." class="search-input">
-        <select class="filter-select">
+        <input
+          v-model="searchQuery"
+          type="text"
+          placeholder="Buscar productos..."
+          class="search-input"
+          @keyup.enter="fetchProducts(1)"
+        >
+        <select v-model="selectedCategory" class="filter-select" @change="fetchProducts(1)">
           <option value="">Todas las categorías</option>
           <option value="1">Bebidas</option>
           <option value="2">Frutas y Verduras</option>
@@ -18,11 +24,26 @@
           <option value="7">Despensa</option>
           <option value="8">Hogar y Limpieza</option>
         </select>
+        <button class="btn-search" @click="fetchProducts(1)">Buscar</button>
       </div>
     </div>
     
-    <div class="products-table">
-      <table>
+    <!-- Spinner de carga -->
+    <div v-if="loading" class="loading-container">
+      <div class="loading-spinner"></div>
+      <p>Cargando productos...</p>
+    </div>
+    
+    <!-- Mensaje de error -->
+    <div v-else-if="error" class="error-container">
+      <h3>Error al cargar productos</h3>
+      <p>{{ error }}</p>
+      <button @click="fetchProducts(currentPage)" class="btn-retry">Reintentar</button>
+    </div>
+    
+    <!-- Tabla de productos -->
+    <div v-else class="products-table">
+      <table v-if="products && products.length">
         <thead>
           <tr>
             <th>ID</th>
@@ -35,48 +56,374 @@
           </tr>
         </thead>
         <tbody>
-          <tr>
-            <td>1</td>
-            <td><div class="product-image-placeholder"></div></td>
-            <td>Producto de Ejemplo</td>
-            <td>Bebidas</td>
-            <td>2.99€</td>
-            <td>25</td>
+          <tr v-for="product in products" :key="product.id">
+            <td>{{ product.id }}</td>
             <td>
-              <button class="btn-edit">Editar</button>
-              <button class="btn-delete">Eliminar</button>
+              <div class="product-image">
+                <img
+                  v-if="product.image_path"
+                  :src="product.image_path"
+                  :alt="product.name"
+                >
+                <div v-else class="product-image-placeholder"></div>
+              </div>
             </td>
-          </tr>
-          <tr>
-            <td>2</td>
-            <td><div class="product-image-placeholder"></div></td>
-            <td>Producto de Ejemplo 2</td>
-            <td>Frutas y Verduras</td>
-            <td>1.49€</td>
-            <td>40</td>
+            <td>{{ product.name }}</td>
+            <td>{{ product.category.name }}</td>
+            <td>{{ product.price }}€</td>
+            <td>{{ product.stock }}</td>
             <td>
-              <button class="btn-edit">Editar</button>
-              <button class="btn-delete">Eliminar</button>
+              <button class="btn-edit" @click="editProduct(product)">Editar</button>
+              <button class="btn-delete" @click="confirmDeleteProduct(product)">Eliminar</button>
             </td>
           </tr>
         </tbody>
       </table>
+      
+      <div v-else class="no-products">
+        <p>No se encontraron productos con los criterios de búsqueda actuales.</p>
+        <button @click="resetFilters" class="btn-reset">Resetear filtros</button>
+      </div>
     </div>
     
-    <div class="pagination">
-      <button>&laquo;</button>
-      <button class="active">1</button>
-      <button>2</button>
-      <button>3</button>
-      <button>&raquo;</button>
+    <!-- Paginación -->
+    <div v-if="products && products.length" class="pagination">
+      <button
+        @click="changePage(currentPage - 1)"
+        :disabled="currentPage === 1"
+      >&laquo;</button>
+      
+      <button
+        v-for="page in pagesArray"
+        :key="page"
+        @click="changePage(page)"
+        :class="{ active: currentPage === page }"
+      >
+        {{ page }}
+      </button>
+      
+      <button
+        @click="changePage(currentPage + 1)"
+        :disabled="currentPage === totalPages"
+      >&raquo;</button>
     </div>
     
-    <p class="note">Esta es una versión preliminar del panel de gestión de productos. Las funcionalidades se implementarán proximamente.</p>
+    <!-- Modal Añadir/Editar Producto -->
+    <div v-if="showAddProductModal || showEditProductModal" class="modal">
+      <div class="modal-content">
+        <span class="close" @click="closeModals">&times;</span>
+        <h2>{{ showEditProductModal ? 'Editar Producto' : 'Añadir Nuevo Producto' }}</h2>
+        
+        <form @submit.prevent="showEditProductModal ? updateProduct() : createProduct()">
+          <div class="form-group">
+            <label for="productName">Nombre:</label>
+            <input
+              id="productName"
+              v-model="productForm.name"
+              type="text"
+              required
+            >
+          </div>
+          
+          <div class="form-group">
+            <label for="productDescription">Descripción:</label>
+            <textarea
+              id="productDescription"
+              v-model="productForm.description"
+              rows="3"
+            ></textarea>
+          </div>
+          
+          <div class="form-group">
+            <label for="productPrice">Precio:</label>
+            <input
+              id="productPrice"
+              v-model="productForm.price"
+              type="number"
+              min="0.01"
+              step="0.01"
+              required
+            >
+          </div>
+          
+          <div class="form-group">
+            <label for="productStock">Stock:</label>
+            <input
+              id="productStock"
+              v-model="productForm.stock"
+              type="number"
+              min="0"
+              required
+            >
+          </div>
+          
+          <div class="form-group">
+            <label for="productCategory">Categoría:</label>
+            <select
+              id="productCategory"
+              v-model="productForm.category_id"
+              required
+            >
+              <option value="">Selecciona una categoría</option>
+              <option value="1">Bebidas</option>
+              <option value="2">Frutas y Verduras</option>
+              <option value="3">Carnes y Aves</option>
+              <option value="4">Pescados y Mariscos</option>
+              <option value="5">Lácteos y Huevos</option>
+              <option value="6">Panadería y Repostería</option>
+              <option value="7">Despensa</option>
+              <option value="8">Hogar y Limpieza</option>
+            </select>
+          </div>
+          
+          <div class="form-group">
+            <label for="productImage">URL de imagen:</label>
+            <input
+              id="productImage"
+              v-model="productForm.image_path"
+              type="text"
+              placeholder="https://..."
+            >
+          </div>
+          
+          <div class="form-actions">
+            <button type="button" class="btn-cancel" @click="closeModals">Cancelar</button>
+            <button type="submit" class="btn-submit">
+              {{ showEditProductModal ? 'Actualizar' : 'Añadir' }}
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+    
+    <!-- Modal Confirmación Eliminar -->
+    <div v-if="showDeleteModal" class="modal">
+      <div class="modal-content">
+        <span class="close" @click="showDeleteModal = false">&times;</span>
+        <h2>Confirmar Eliminación</h2>
+        <p>¿Estás seguro de que deseas eliminar el producto "{{ productToDelete?.name }}"?</p>
+        <div class="form-actions">
+          <button type="button" class="btn-cancel" @click="showDeleteModal = false">Cancelar</button>
+          <button type="button" class="btn-delete" @click="deleteProduct">Eliminar</button>
+        </div>
+      </div>
+    </div>
   </div>
 </template>
 
 <script setup>
-// Aquí irá la lógica para gestionar productos
+import { ref, computed, onMounted } from 'vue';
+import adminService from '@/services/adminService';
+
+// Estado para la lista de productos
+const products = ref([]);
+const loading = ref(true);
+const error = ref(null);
+
+// Estado para filtros y paginación
+const searchQuery = ref('');
+const selectedCategory = ref('');
+const currentPage = ref(1);
+const totalProducts = ref(0);
+const totalPages = ref(1);
+const productsPerPage = ref(10);
+
+// Formulario producto
+const productForm = ref({
+  name: '',
+  description: '',
+  price: '',
+  stock: '',
+  category_id: '',
+  image_path: ''
+});
+
+// Estado modales
+const showAddProductModal = ref(false);
+const showEditProductModal = ref(false);
+const showDeleteModal = ref(false);
+const productToEdit = ref(null);
+const productToDelete = ref(null);
+
+// Calcular array de páginas para la paginación
+const pagesArray = computed(() => {
+  const pages = [];
+  const maxVisiblePages = 5;
+  
+  if (totalPages.value <= maxVisiblePages) {
+    for (let i = 1; i <= totalPages.value; i++) {
+      pages.push(i);
+    }
+  } else {
+    // Siempre mostrar primera página
+    if (currentPage.value > 3) {
+      pages.push(1);
+      if (currentPage.value > 4) {
+        pages.push('...');
+      }
+    }
+    
+    // Páginas alrededor de la actual
+    const startPage = Math.max(2, currentPage.value - 1);
+    const endPage = Math.min(totalPages.value - 1, currentPage.value + 1);
+    
+    for (let i = startPage; i <= endPage; i++) {
+      pages.push(i);
+    }
+    
+    // Siempre mostrar última página
+    if (currentPage.value < totalPages.value - 2) {
+      if (currentPage.value < totalPages.value - 3) {
+        pages.push('...');
+      }
+      pages.push(totalPages.value);
+    }
+  }
+  
+  return pages;
+});
+
+// Obtener productos desde el backend
+const fetchProducts = async (page) => {
+  loading.value = true;
+  error.value = null;
+  currentPage.value = page;
+  
+  try {
+    const response = await adminService.getProducts(
+      page,
+      productsPerPage.value,
+      searchQuery.value,
+      selectedCategory.value || null
+    );
+    
+    products.value = response.products;
+    totalProducts.value = response.pagination.total;
+    totalPages.value = response.pagination.pages;
+    
+    // Ajustar página actual si es mayor que el total de páginas
+    if (currentPage.value > totalPages.value && totalPages.value > 0) {
+      changePage(totalPages.value);
+    }
+  } catch (err) {
+    console.error('Error al obtener productos:', err);
+    error.value = 'No se pudieron cargar los productos. Por favor, inténtalo de nuevo.';
+  } finally {
+    loading.value = false;
+  }
+};
+
+// Cambiar página
+const changePage = (page) => {
+  if (page < 1 || page > totalPages.value) return;
+  fetchProducts(page);
+};
+
+// Resetear filtros
+const resetFilters = () => {
+  searchQuery.value = '';
+  selectedCategory.value = '';
+  fetchProducts(1);
+};
+
+// Crear producto
+const createProduct = async () => {
+  try {
+    await adminService.createProduct({
+      name: productForm.value.name,
+      description: productForm.value.description,
+      price: parseFloat(productForm.value.price),
+      stock: parseInt(productForm.value.stock),
+      category_id: parseInt(productForm.value.category_id),
+      image_path: productForm.value.image_path
+    });
+    
+    showAddProductModal.value = false;
+    resetProductForm();
+    fetchProducts(currentPage.value);
+  } catch (err) {
+    console.error('Error al crear producto:', err);
+    alert('Error al crear el producto: ' + (err.response?.data?.error || err.message));
+  }
+};
+
+// Editar producto
+const editProduct = (product) => {
+  productToEdit.value = product;
+  productForm.value = {
+    name: product.name,
+    description: product.description || '',
+    price: product.price,
+    stock: product.stock,
+    category_id: product.category.id.toString(),
+    image_path: product.image_path || ''
+  };
+  showEditProductModal.value = true;
+};
+
+// Actualizar producto
+const updateProduct = async () => {
+  try {
+    await adminService.updateProduct(productToEdit.value.id, {
+      name: productForm.value.name,
+      description: productForm.value.description,
+      price: parseFloat(productForm.value.price),
+      stock: parseInt(productForm.value.stock),
+      category_id: parseInt(productForm.value.category_id),
+      image_path: productForm.value.image_path
+    });
+    
+    showEditProductModal.value = false;
+    resetProductForm();
+    fetchProducts(currentPage.value);
+  } catch (err) {
+    console.error('Error al actualizar producto:', err);
+    alert('Error al actualizar el producto: ' + (err.response?.data?.error || err.message));
+  }
+};
+
+// Confirmar eliminación
+const confirmDeleteProduct = (product) => {
+  productToDelete.value = product;
+  showDeleteModal.value = true;
+};
+
+// Eliminar producto
+const deleteProduct = async () => {
+  try {
+    await adminService.deleteProduct(productToDelete.value.id);
+    showDeleteModal.value = false;
+    fetchProducts(currentPage.value);
+  } catch (err) {
+    console.error('Error al eliminar producto:', err);
+    alert('Error al eliminar el producto: ' + (err.response?.data?.error || err.message));
+  }
+};
+
+// Cerrar modales
+const closeModals = () => {
+  showAddProductModal.value = false;
+  showEditProductModal.value = false;
+  resetProductForm();
+};
+
+// Resetear formulario
+const resetProductForm = () => {
+  productForm.value = {
+    name: '',
+    description: '',
+    price: '',
+    stock: '',
+    category_id: '',
+    image_path: ''
+  };
+  productToEdit.value = null;
+};
+
+// Cargar productos cuando se monte el componente
+onMounted(() => {
+  fetchProducts(1);
+});
 </script>
 
 <style scoped>
@@ -88,7 +435,12 @@
 
 h1 {
   color: #2c5e1a;
-  margin-bottom: 2rem;
+  margin-bottom: 1rem;
+}
+
+h2 {
+  color: #3a7a23;
+  margin-bottom: 1.5rem;
 }
 
 .admin-controls {
@@ -96,25 +448,69 @@ h1 {
   justify-content: space-between;
   align-items: center;
   margin-bottom: 2rem;
+  flex-wrap: wrap;
+  gap: 1rem;
 }
 
-.btn-primary {
-  background-color: #2c5e1a;
-  color: white;
+.btn-primary, .btn-search, .btn-retry, .btn-reset, .btn-submit, .btn-cancel {
   border: none;
   padding: 0.75rem 1rem;
   border-radius: 4px;
   cursor: pointer;
   font-weight: bold;
+  transition: background-color 0.2s;
+}
+
+.btn-primary {
+  background-color: #2c5e1a;
+  color: white;
 }
 
 .btn-primary:hover {
   background-color: #3a7a23;
 }
 
+.btn-search {
+  background-color: #4a90e2;
+  color: white;
+}
+
+.btn-search:hover {
+  background-color: #3a80d2;
+}
+
+.btn-retry, .btn-reset {
+  background-color: #6c757d;
+  color: white;
+}
+
+.btn-retry:hover, .btn-reset:hover {
+  background-color: #5a6268;
+}
+
+.btn-submit {
+  background-color: #2c5e1a;
+  color: white;
+}
+
+.btn-submit:hover {
+  background-color: #3a7a23;
+}
+
+.btn-cancel {
+  background-color: #6c757d;
+  color: white;
+  margin-right: 1rem;
+}
+
+.btn-cancel:hover {
+  background-color: #5a6268;
+}
+
 .search-filter {
   display: flex;
-  gap: 1rem;
+  gap: 0.5rem;
+  flex-wrap: wrap;
 }
 
 .search-input, .filter-select {
@@ -123,14 +519,18 @@ h1 {
   border-radius: 4px;
 }
 
+.search-input {
+  min-width: 250px;
+}
+
 .products-table {
   overflow-x: auto;
+  margin-bottom: 2rem;
 }
 
 table {
   width: 100%;
   border-collapse: collapse;
-  margin-bottom: 2rem;
 }
 
 th, td {
@@ -148,6 +548,20 @@ tr:hover {
   background-color: #f9f9f9;
 }
 
+.product-image {
+  width: 60px;
+  height: 60px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.product-image img {
+  max-width: 100%;
+  max-height: 100%;
+  object-fit: contain;
+}
+
 .product-image-placeholder {
   width: 50px;
   height: 50px;
@@ -161,6 +575,7 @@ tr:hover {
   border-radius: 4px;
   cursor: pointer;
   margin-right: 0.5rem;
+  font-weight: bold;
 }
 
 .btn-edit {
@@ -168,9 +583,17 @@ tr:hover {
   color: white;
 }
 
+.btn-edit:hover {
+  background-color: #3a80d2;
+}
+
 .btn-delete {
   background-color: #e74c3c;
   color: white;
+}
+
+.btn-delete:hover {
+  background-color: #d73c2c;
 }
 
 .pagination {
@@ -178,6 +601,7 @@ tr:hover {
   justify-content: center;
   gap: 0.5rem;
   margin-top: 2rem;
+  flex-wrap: wrap;
 }
 
 .pagination button {
@@ -186,6 +610,12 @@ tr:hover {
   background-color: white;
   cursor: pointer;
   border-radius: 4px;
+  min-width: 40px;
+}
+
+.pagination button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
 }
 
 .pagination button.active {
@@ -194,10 +624,111 @@ tr:hover {
   border-color: #2c5e1a;
 }
 
-.note {
-  color: #666;
-  font-style: italic;
+.loading-container, .no-products, .error-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 200px;
   text-align: center;
+}
+
+.loading-spinner {
+  border: 5px solid #f3f3f3;
+  border-top: 5px solid #3a7a23;
+  border-radius: 50%;
+  width: 50px;
+  height: 50px;
+  animation: spin 1s linear infinite;
+  margin-bottom: 1rem;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+.error-container {
+  background-color: #fff0f0;
+  border-radius: 8px;
+  padding: 2rem;
+  margin: 2rem 0;
+}
+
+.modal {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.5);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+}
+
+.modal-content {
+  background-color: white;
+  border-radius: 8px;
+  padding: 2rem;
+  width: 90%;
+  max-width: 600px;
+  max-height: 90vh;
+  overflow-y: auto;
+  position: relative;
+}
+
+.close {
+  position: absolute;
+  top: 1rem;
+  right: 1rem;
+  font-size: 1.5rem;
+  cursor: pointer;
+  color: #999;
+}
+
+.close:hover {
+  color: #333;
+}
+
+.form-group {
+  margin-bottom: 1.5rem;
+}
+
+.form-group label {
+  display: block;
+  margin-bottom: 0.5rem;
+  font-weight: bold;
+}
+
+.form-group input, .form-group textarea, .form-group select {
+  width: 100%;
+  padding: 0.75rem;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  box-sizing: border-box;
+}
+
+.form-actions {
+  display: flex;
+  justify-content: flex-end;
   margin-top: 2rem;
+}
+
+@media (max-width: 768px) {
+  .admin-controls {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  
+  .search-filter {
+    flex-direction: column;
+  }
+  
+  .modal-content {
+    width: 95%;
+    padding: 1.5rem;
+  }
 }
 </style>
