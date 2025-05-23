@@ -65,6 +65,25 @@ const router = createRouter({
       name: 'search-results',
       component: () => import('../views/SearchResultsView.vue')
     },
+    // Rutas de administración
+    {
+      path: '/admin/stats',
+      name: 'admin-stats',
+      component: () => import('../views/AdminStatsView.vue'),
+      meta: { requiresAuth: true, requiresAdmin: true }
+    },
+    {
+      path: '/admin/products',
+      name: 'admin-products',
+      component: () => import('../views/AdminProductsView.vue'),
+      meta: { requiresAuth: true, requiresAdmin: true }
+    },
+    {
+      path: '/admin/users',
+      name: 'admin-users',
+      component: () => import('../views/AdminUsersView.vue'),
+      meta: { requiresAuth: true, requiresAdmin: true }
+    },
   ],
 })
 
@@ -78,6 +97,11 @@ router.beforeEach((to, from, next) => {
     // Guardar la ruta a la que intentaba acceder para redirigir después del login
     sessionStorage.setItem('redirectAfterLogin', to.fullPath)
     return next('/login')
+  }
+  
+  // Si la ruta requiere rol de administrador y el usuario no es administrador
+  if (to.meta.requiresAdmin && !authStore.isAdmin) {
+    return next('/')
   }
   
   // Si la ruta es solo para invitados (login/register) y el usuario está autenticado

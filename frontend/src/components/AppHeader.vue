@@ -10,6 +10,7 @@ const authStore = useAuthStore();
 
 // Estado de autenticación
 const isAuthenticated = computed(() => authStore.isAuthenticated);
+const isAdmin = computed(() => authStore.isAdmin);
 const userName = computed(() => authStore.user?.name || 'Usuario');
 
 // Estado para el buscador
@@ -56,6 +57,19 @@ const goToProfile = () => {
 
 const goToCart = () => {
   router.push('/cart');
+};
+
+// Funciones de navegación para secciones de administrador
+const goToAdminStats = () => {
+  router.push('/admin/stats');
+};
+
+const goToAdminProducts = () => {
+  router.push('/admin/products');
+};
+
+const goToAdminUsers = () => {
+  router.push('/admin/users');
 };
 
 // Función para cerrar sesión
@@ -134,6 +148,11 @@ const handleLogout = async () => {
             </a>
             <div class="dropdown-content">
               <a @click="goToProfile" style="cursor: pointer;">Mi perfil</a>
+              <template v-if="isAdmin">
+                <a @click="goToAdminStats" style="cursor: pointer;">Estadísticas</a>
+                <a @click="goToAdminProducts" style="cursor: pointer;">Gestionar Productos</a>
+                <a @click="goToAdminUsers" style="cursor: pointer;">Gestionar Usuarios</a>
+              </template>
               <a @click="handleLogout" style="cursor: pointer;">Cerrar sesión</a>
             </div>
           </div>
