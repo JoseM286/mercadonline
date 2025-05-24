@@ -99,11 +99,8 @@ const adminService = {
   // Custom statistics for admin dashboard - Optimized version
   async getDashboardStats() {
     try {
-      // Create a single endpoint on the backend to return all dashboard data in one request
-      // For now, optimize by using smaller limit and configuring axios timeout
-      
-      // Set smaller data limits to reduce payload size
-      const limit = 5; // Reduce number of items in each list
+      // Define un valor para limit si no está disponible en este contexto
+      const limit = 5;
       
       // Make requests in parallel and use timeout to prevent hanging requests
       const promises = [
@@ -116,7 +113,13 @@ const adminService = {
       const [usersStats, popularProducts, orders, productsData] = await Promise.all(promises);
       
       return {
-        users: usersStats.statistics,
+        users: {
+          total: usersStats.statistics.totalUsers,
+          totalAdmins: usersStats.statistics.totalAdmins,
+          newUsersLastWeek: usersStats.statistics.newUsersLastWeek,
+          newUsersLastMonth: usersStats.statistics.newUsersLastMonth,
+          newUsersLast6Months: usersStats.statistics.newUsersLast6Months
+        },
         popularProducts: popularProducts.products,
         recentOrders: orders.orders,
         totalProducts: productsData.pagination.total
@@ -129,3 +132,4 @@ const adminService = {
 };
 
 export default adminService;
+

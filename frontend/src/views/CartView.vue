@@ -67,9 +67,21 @@ const removeItem = async (itemId) => {
 };
 
 // Función para proceder al pago
-const checkout = () => {
-  alert('Redirigiendo al proceso de pago...');
-  // Aquí iría la lógica para redirigir al proceso de pago
+const checkout = async () => {
+  try {
+    // Llamar al endpoint de checkout
+    const response = await axios.post(`${import.meta.env.VITE_API_URL}/orders/create`, {
+      shipping_address: "Dirección de envío predeterminada" // Esto podría venir de un formulario
+    });
+    
+    // Si la respuesta es exitosa, mostrar mensaje y redirigir
+    alert('Pedido realizado con éxito. Redirigiendo al proceso de pago...');
+    // Aquí podrías redirigir a una página de confirmación o pago
+    // router.push(`/payment/${response.data.order.id}`);
+  } catch (err) {
+    console.error('Error al procesar el pedido:', err);
+    alert('Error al procesar el pedido. Por favor, inténtalo de nuevo.');
+  }
 };
 
 // Función para obtener la URL de la imagen
@@ -469,6 +481,11 @@ onMounted(() => {
   color: #2c5e1a;
 }
 </style>
+
+
+
+
+
 
 
 
