@@ -145,11 +145,10 @@ const adminService = {
         users: {
           total: usersStats.statistics.totalUsers,
           totalAdmins: usersStats.statistics.totalAdmins,
-          // Eliminamos los campos que ya no existen
         },
         popularProducts: popularProducts.products,
         recentOrders: orders.orders,
-        totalProducts: productsData.pagination.total,
+        totalProducts: startDate || endDate ? null : productsData.pagination.total, // Solo mostrar total si no hay filtro
         totalSales: orders.totalSales || 0,
         totalOrders: orders.totalOrders || 0,
         // Añadimos las fechas del filtro para mostrarlas en la UI
@@ -166,6 +165,7 @@ const adminService = {
 };
 
 export default adminService;
+
 
 
 

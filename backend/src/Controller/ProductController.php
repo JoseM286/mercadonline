@@ -275,13 +275,39 @@ class ProductController extends AbstractController
             $limit = min(50, $request->query->getInt('limit', 20));
             $useRatio = $request->query->getBoolean('use_ratio', true);
             
+            // Fechas
+            $startDate = null;
+            $endDate = null;
+            
+            if ($request->query->has('start_date')) {
+                try {
+                    $startDate = new \DateTimeImmutable($request->query->get('start_date'));
+                } catch (\Exception $e) {
+                    return $this->json([
+                        'error' => 'Formato de fecha de inicio inválido. Use el formato YYYY-MM-DD.'
+                    ], Response::HTTP_BAD_REQUEST);
+                }
+            }
+            
+            if ($request->query->has('end_date')) {
+                try {
+                    $endDate = new \DateTimeImmutable($request->query->get('end_date'));
+                    // Ajustar la fecha de fin para incluir todo el día
+                    $endDate = $endDate->modify('+1 day')->modify('-1 second');
+                } catch (\Exception $e) {
+                    return $this->json([
+                        'error' => 'Formato de fecha de fin inválido. Use el formato YYYY-MM-DD.'
+                    ], Response::HTTP_BAD_REQUEST);
+                }
+            }
+            
             // Obtener productos populares
             if ($useRatio) {
                 // Usando ratio de ventas por mes
                 $productsData = $this->productRepository->findMostPopularProductsWithRatio($limit);
             } else {
-                // Usando solo el total de ventas
-                $products = $this->productRepository->findMostPopularProducts($limit);
+                // Usando solo el total de ventas con filtro de fechas
+                $products = $this->productRepository->findMostPopularProductsInDateRange($limit, $startDate, $endDate);
                 
                 // Formatear respuesta
                 $productsData = [];
@@ -306,15 +332,12 @@ class ProductController extends AbstractController
                 'products' => $productsData
             ]);
         } catch (\Exception $e) {
-            // Log del error para debugging
-            error_log('Error en getPopularProducts: ' . $e->getMessage());
-            
             return $this->json([
-                'error' => 'Error al obtener los productos populares',
-                'message' => $e->getMessage()
+                'error' => 'Error al obtener productos populares: ' . $e->getMessage()
             ], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
 }
+
 
 

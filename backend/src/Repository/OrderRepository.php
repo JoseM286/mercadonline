@@ -81,5 +81,72 @@ class OrderRepository extends ServiceEntityRepository
             ->getQuery()
             ->getResult();
     }
+
+    /**
+     * Encuentra órdenes en un rango de fechas
+     */
+    public function findByDateRange(?\DateTimeInterface $startDate = null, ?\DateTimeInterface $endDate = null, int $limit = 10, int $offset = 0): array
+    {
+        $qb = $this->createQueryBuilder('o')
+            ->orderBy('o.createdAt', 'DESC')
+            ->setMaxResults($limit)
+            ->setFirstResult($offset);
+        
+        if ($startDate !== null) {
+            $qb->andWhere('o.createdAt >= :startDate')
+               ->setParameter('startDate', $startDate);
+        }
+        
+        if ($endDate !== null) {
+            $qb->andWhere('o.createdAt <= :endDate')
+               ->setParameter('endDate', $endDate);
+        }
+        
+        return $qb->getQuery()->getResult();
+    }
+
+    /**
+     * Cuenta órdenes en un rango de fechas
+     */
+    public function countByDateRange(?\DateTimeInterface $startDate = null, ?\DateTimeInterface $endDate = null): int
+    {
+        $qb = $this->createQueryBuilder('o')
+            ->select('COUNT(o.id)');
+        
+        if ($startDate !== null) {
+            $qb->andWhere('o.createdAt >= :startDate')
+               ->setParameter('startDate', $startDate);
+        }
+        
+        if ($endDate !== null) {
+            $qb->andWhere('o.createdAt <= :endDate')
+               ->setParameter('endDate', $endDate);
+        }
+        
+        return (int) $qb->getQuery()->getSingleScalarResult();
+    }
+
+    /**
+     * Calcula el total de ventas en un rango de fechas
+     */
+    public function calculateTotalSalesInDateRange(?\DateTimeInterface $startDate = null, ?\DateTimeInterface $endDate = null): float
+    {
+        $qb = $this->createQueryBuilder('o')
+            ->select('SUM(o.totalAmount)');
+        
+        if ($startDate !== null) {
+            $qb->andWhere('o.createdAt >= :startDate')
+               ->setParameter('startDate', $startDate);
+        }
+        
+        if ($endDate !== null) {
+            $qb->andWhere('o.createdAt <= :endDate')
+               ->setParameter('endDate', $endDate);
+        }
+        
+        $result = $qb->getQuery()->getSingleScalarResult();
+        return $result ? (float) $result : 0.0;
+    }
 }
+
 

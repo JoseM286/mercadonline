@@ -144,7 +144,52 @@ class ProductRepository extends ServiceEntityRepository
         
         return $result;
     }
+
+    /**
+     * Cuenta productos creados en un rango de fechas
+     */
+    public function countByDateRange(?\DateTimeInterface $startDate = null, ?\DateTimeInterface $endDate = null): int
+    {
+        $qb = $this->createQueryBuilder('p')
+            ->select('COUNT(p.id)');
+        
+        if ($startDate !== null) {
+            $qb->andWhere('p.createdAt >= :startDate')
+               ->setParameter('startDate', $startDate);
+        }
+        
+        if ($endDate !== null) {
+            $qb->andWhere('p.createdAt <= :endDate')
+               ->setParameter('endDate', $endDate);
+        }
+        
+        return (int) $qb->getQuery()->getSingleScalarResult();
+    }
+
+    /**
+     * Encuentra los productos más vendidos en un rango de fechas
+     */
+    public function findMostPopularProductsInDateRange(int $limit = 20, ?\DateTimeInterface $startDate = null, ?\DateTimeInterface $endDate = null): array
+    {
+        $qb = $this->createQueryBuilder('p')
+            ->orderBy('p.sales', 'DESC')
+            ->setMaxResults($limit);
+        
+        // Si tenemos fechas, filtramos por fecha de creación
+        if ($startDate !== null) {
+            $qb->andWhere('p.createdAt >= :startDate')
+               ->setParameter('startDate', $startDate);
+        }
+        
+        if ($endDate !== null) {
+            $qb->andWhere('p.createdAt <= :endDate')
+               ->setParameter('endDate', $endDate);
+        }
+        
+        return $qb->getQuery()->getResult();
+    }
 }
+
 
 
 

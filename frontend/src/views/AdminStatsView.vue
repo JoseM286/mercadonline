@@ -37,6 +37,9 @@
         {{ dashboardStats.dateRange.startDate ? `Desde ${formatDate(dashboardStats.dateRange.startDate)}` : 'Desde el inicio' }} 
         {{ dashboardStats.dateRange.endDate ? `hasta ${formatDate(dashboardStats.dateRange.endDate)}` : 'hasta hoy' }}
       </p>
+      <p class="filter-note">
+        <i>Nota: Las estadísticas muestran solo los datos creados en este rango de fechas.</i>
+      </p>
     </div>
     
     <div v-if="loading" class="loading-container">
@@ -54,32 +57,86 @@
       <div class="stats-card">
         <h3>Usuarios Registrados</h3>
         <div class="stats-value">{{ dashboardStats.users?.total || 0 }}</div>
+        <div v-if="isFiltered" class="stats-note">Registrados en el período seleccionado</div>
       </div>
       
       <div class="stats-card">
         <h3>Administradores</h3>
         <div class="stats-value">{{ dashboardStats.users?.totalAdmins || 0 }}</div>
+        <div v-if="isFiltered" class="stats-note">Registrados en el período seleccionado</div>
       </div>
       
-      <!-- Eliminamos las tarjetas de estadísticas que ya no existen -->
-      
       <!-- Estadísticas de productos y ventas -->
-      <div class="stats-card">
-        <h3>Total Productos</h3>
+      <div class="stats-card" v-if="!isFiltered || dashboardStats.totalProducts !== null">
+        <h3>Productos</h3>
         <div class="stats-value">{{ dashboardStats.totalProducts || 0 }}</div>
       </div>
       
       <div class="stats-card">
-        <h3>Total Pedidos</h3>
+        <h3>Pedidos</h3>
         <div class="stats-value">{{ dashboardStats.totalOrders || 0 }}</div>
+        <div v-if="isFiltered" class="stats-note">Creados en el período seleccionado</div>
       </div>
       
       <div class="stats-card">
-        <h3>Total Ventas</h3>
+        <h3>Ventas</h3>
         <div class="stats-value">{{ dashboardStats.totalSales || 0 }}€</div>
+        <div v-if="isFiltered" class="stats-note">Realizadas en el período seleccionado</div>
       </div>
       
-      <!-- Resto del template sin cambios -->
+      <!-- Productos populares -->
+      <div class="stats-section full-width">
+        <h2>Productos Populares</h2>
+        <div class="table-container">
+          <table v-if="dashboardStats.popularProducts && dashboardStats.popularProducts.length">
+            <thead>
+              <tr>
+                <th>Producto</th>
+                <th>Categoría</th>
+                <th>Precio</th>
+                <th>Ventas</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr v-for="product in dashboardStats.popularProducts" :key="product.id">
+                <td>{{ product.name }}</td>
+                <td>{{ product.category?.name }}</td>
+                <td>{{ product.price }}€</td>
+                <td>{{ product.sales }}</td>
+              </tr>
+            </tbody>
+          </table>
+          <p v-else>No hay datos de productos populares disponibles.</p>
+        </div>
+      </div>
+      
+      <!-- Pedidos recientes -->
+      <div class="stats-section full-width">
+        <h2>Pedidos Recientes</h2>
+        <div class="table-container">
+          <table v-if="dashboardStats.recentOrders && dashboardStats.recentOrders.length">
+            <thead>
+              <tr>
+                <th>ID</th>
+                <th>Cliente</th>
+                <th>Importe</th>
+                <th>Estado</th>
+                <th>Fecha</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr v-for="order in dashboardStats.recentOrders" :key="order.id">
+                <td>{{ order.id }}</td>
+                <td>{{ order.user?.name || order.user?.email }}</td>
+                <td>{{ order.total_amount }}€</td>
+                <td>{{ translateStatus(order.status) }}</td>
+                <td>{{ formatDate(order.created_at) }}</td>
+              </tr>
+            </tbody>
+          </table>
+          <p v-else>No hay datos de pedidos recientes disponibles.</p>
+        </div>
+      </div>
     </div>
   </div>
 </template>
@@ -95,7 +152,11 @@ const dashboardStats = ref({
   recentOrders: [],
   totalProducts: 0,
   totalSales: 0,
-  totalOrders: 0
+  totalOrders: 0,
+  dateRange: {
+    startDate: null,
+    endDate: null
+  }
 });
 const loading = ref(true);
 const error = ref(null);
@@ -106,6 +167,12 @@ const endDate = ref('');
 const today = computed(() => {
   const now = new Date();
   return now.toISOString().split('T')[0];
+});
+
+// Comprobar si hay filtro activo
+const isFiltered = computed(() => {
+  return dashboardStats.value.dateRange && 
+         (dashboardStats.value.dateRange.startDate || dashboardStats.value.dateRange.endDate);
 });
 
 // Formatear fecha
@@ -194,12 +261,11 @@ h2 {
   margin: 2rem 0 1rem;
 }
 
-.stats-container {
+.stats-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
   gap: 1.5rem;
   margin-top: 2rem;
-  margin-bottom: 2rem;
 }
 
 .stats-card {
@@ -227,16 +293,11 @@ h2 {
   color: #2c5e1a;
 }
 
-.detailed-stats {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 2rem;
-}
-
-@media (max-width: 992px) {
-  .detailed-stats {
-    grid-template-columns: 1fr;
-  }
+.stats-note {
+  font-size: 0.8rem;
+  color: #666;
+  margin-top: 0.5rem;
+  font-style: italic;
 }
 
 .stats-section {
@@ -244,6 +305,11 @@ h2 {
   border-radius: 8px;
   box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
   padding: 1.5rem;
+  margin-top: 1.5rem;
+}
+
+.full-width {
+  grid-column: 1 / -1;
 }
 
 .table-container {
@@ -306,52 +372,13 @@ tr:hover {
   background-color: #3a7a23;
   color: white;
   border: none;
-  padding: 0.75rem 1.5rem;
+  padding: 0.5rem 1rem;
   border-radius: 4px;
   cursor: pointer;
-  font-weight: bold;
   margin-top: 1rem;
 }
 
-.status-badge {
-  display: inline-block;
-  padding: 0.25rem 0.5rem;
-  border-radius: 4px;
-  font-size: 0.85rem;
-  font-weight: bold;
-}
-
-.status-pending {
-  background-color: #fff3cd;
-  color: #856404;
-}
-
-.status-paid {
-  background-color: #d4edda;
-  color: #155724;
-}
-
-.status-processing {
-  background-color: #cce5ff;
-  color: #004085;
-}
-
-.status-shipped {
-  background-color: #d1ecf1;
-  color: #0c5460;
-}
-
-.status-delivered {
-  background-color: #d4edda;
-  color: #155724;
-}
-
-.status-cancelled {
-  background-color: #f8d7da;
-  color: #721c24;
-}
-
-/* Nuevos estilos para los filtros de fecha */
+/* Estilos para los filtros de fecha */
 .date-filters {
   display: flex;
   flex-wrap: wrap;

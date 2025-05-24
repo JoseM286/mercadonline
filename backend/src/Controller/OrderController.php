@@ -408,7 +408,34 @@ class OrderController extends AbstractController
         // Filtros
         $status = $request->query->get('status');
         $userId = $request->query->get('user_id');
+        
+        // Fechas
+        $startDate = null;
+        $endDate = null;
+        
+        if ($request->query->has('start_date')) {
+            try {
+                $startDate = new \DateTimeImmutable($request->query->get('start_date'));
+            } catch (\Exception $e) {
+                return $this->json([
+                    'error' => 'Formato de fecha de inicio inválido. Use el formato YYYY-MM-DD.'
+                ], Response::HTTP_BAD_REQUEST);
+            }
+        }
+        
+        if ($request->query->has('end_date')) {
+            try {
+                $endDate = new \DateTimeImmutable($request->query->get('end_date'));
+                // Ajustar la fecha de fin para incluir todo el día
+                $endDate = $endDate->modify('+1 day')->modify('-1 second');
+            } catch (\Exception $e) {
+                return $this->json([
+                    'error' => 'Formato de fecha de fin inválido. Use el formato YYYY-MM-DD.'
+                ], Response::HTTP_BAD_REQUEST);
+            }
+        }
 
+        // Criterios de filtrado
         $criteria = [];
         if ($status) {
             $criteria['status'] = $status;
@@ -417,15 +444,26 @@ class OrderController extends AbstractController
             $criteria['user'] = $userId;
         }
 
-        // Obtener pedidos
-        $orders = $this->orderRepository->findBy(
-            $criteria,
-            ['createdAt' => 'DESC'],
-            $limit,
-            $offset
-        );
-
-        $total = $this->orderRepository->count($criteria);
+        // Obtener pedidos con filtro de fechas
+        $orders = [];
+        $total = 0;
+        $totalSales = 0;
+        
+        if (!empty($criteria)) {
+            // Si hay criterios específicos, usamos findBy
+            $orders = $this->orderRepository->findBy(
+                $criteria,
+                ['createdAt' => 'DESC'],
+                $limit,
+                $offset
+            );
+            $total = $this->orderRepository->count($criteria);
+        } else {
+            // Si no hay criterios específicos, usamos nuestro método personalizado
+            $orders = $this->orderRepository->findByDateRange($startDate, $endDate, $limit, $offset);
+            $total = $this->orderRepository->countByDateRange($startDate, $endDate);
+            $totalSales = $this->orderRepository->calculateTotalSalesInDateRange($startDate, $endDate);
+        }
 
         // Formatear respuesta
         $ordersData = [];
@@ -453,10 +491,13 @@ class OrderController extends AbstractController
                 'page' => $page,
                 'limit' => $limit,
                 'pages' => ceil($total / $limit)
-            ]
+            ],
+            'totalOrders' => $total,
+            'totalSales' => $totalSales
         ]);
     }
 }
+
 
 
 
