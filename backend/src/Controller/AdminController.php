@@ -151,22 +151,37 @@ class AdminController extends AbstractController
     #[Route('/statistics', name: 'app_admin_user_statistics', methods: ['GET'])]
     public function getUserStatistics(Request $request): JsonResponse
     {
-        // Verificar si se proporciona una fecha de referencia
-        $referenceDate = null;
-        if ($request->query->has('date')) {
+        // Verificar si se proporcionan fechas de inicio y fin
+        $startDate = null;
+        $endDate = null;
+        
+        if ($request->query->has('start_date')) {
             try {
-                $referenceDate = new \DateTimeImmutable($request->query->get('date'));
+                $startDate = new \DateTimeImmutable($request->query->get('start_date'));
             } catch (\Exception $e) {
                 return $this->json([
-                    'error' => 'Formato de fecha inválido. Use el formato YYYY-MM-DD.'
+                    'error' => 'Formato de fecha de inicio inválido. Use el formato YYYY-MM-DD.'
                 ], Response::HTTP_BAD_REQUEST);
             }
         }
-
-        $statistics = $this->userRepository->getStatistics($referenceDate);
-
+        
+        if ($request->query->has('end_date')) {
+            try {
+                $endDate = new \DateTimeImmutable($request->query->get('end_date'));
+                // Ajustar la fecha de fin para incluir todo el día
+                $endDate = $endDate->modify('+1 day')->modify('-1 second');
+            } catch (\Exception $e) {
+                return $this->json([
+                    'error' => 'Formato de fecha de fin inválido. Use el formato YYYY-MM-DD.'
+                ], Response::HTTP_BAD_REQUEST);
+            }
+        }
+        
+        $statistics = $this->userRepository->getStatistics($startDate, $endDate);
+        
         return $this->json([
             'statistics' => $statistics
         ]);
     }
 }
+

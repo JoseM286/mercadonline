@@ -61,7 +61,7 @@ const adminService = {
   },
 
   // Order management
-  async getOrders(page = 1, limit = 10, status = null, userId = null) {
+  async getOrders(page = 1, limit = 10, status = null, userId = null, startDate = null, endDate = null) {
     let url = `${API_URL}/orders/admin/list?page=${page}&limit=${limit}`;
     
     if (status) {
@@ -70,6 +70,14 @@ const adminService = {
     
     if (userId) {
       url += `&user_id=${userId}`;
+    }
+    
+    if (startDate) {
+      url += `&start_date=${startDate}`;
+    }
+    
+    if (endDate) {
+      url += `&end_date=${endDate}`;
     }
     
     const response = await axios.get(url);
@@ -82,31 +90,52 @@ const adminService = {
   },
 
   // Statistics
-  async getUserStatistics(date = null) {
+  async getUserStatistics(startDate = null, endDate = null) {
     let url = `${API_URL}/admin/statistics`;
-    if (date) {
-      url += `?date=${date}`;
+    const params = [];
+    
+    if (startDate) {
+      params.push(`start_date=${startDate}`);
     }
+    
+    if (endDate) {
+      params.push(`end_date=${endDate}`);
+    }
+    
+    if (params.length > 0) {
+      url += `?${params.join('&')}`;
+    }
+    
     const response = await axios.get(url);
     return response.data;
   },
 
-  async getPopularProducts(limit = 5, useRatio = true) {
-    const response = await axios.get(`${API_URL}/products/popular?limit=${limit}&use_ratio=${useRatio}`);
+  async getPopularProducts(limit = 5, useRatio = true, startDate = null, endDate = null) {
+    let url = `${API_URL}/products/popular?limit=${limit}&use_ratio=${useRatio}`;
+    
+    if (startDate) {
+      url += `&start_date=${startDate}`;
+    }
+    
+    if (endDate) {
+      url += `&end_date=${endDate}`;
+    }
+    
+    const response = await axios.get(url);
     return response.data;
   },
 
   // Custom statistics for admin dashboard - Optimized version
-  async getDashboardStats() {
+  async getDashboardStats(startDate = null, endDate = null) {
     try {
       // Define un valor para limit si no está disponible en este contexto
       const limit = 5;
       
       // Make requests in parallel and use timeout to prevent hanging requests
       const promises = [
-        this.getUserStatistics(),
-        this.getPopularProducts(limit),
-        this.getOrders(1, limit),
+        this.getUserStatistics(startDate, endDate),
+        this.getPopularProducts(limit, true, startDate, endDate),
+        this.getOrders(1, limit, null, null, startDate, endDate),
         this.getProducts(1, 10) // Just need pagination info, reduce items
       ];
       
@@ -116,13 +145,18 @@ const adminService = {
         users: {
           total: usersStats.statistics.totalUsers,
           totalAdmins: usersStats.statistics.totalAdmins,
-          newUsersLastWeek: usersStats.statistics.newUsersLastWeek,
-          newUsersLastMonth: usersStats.statistics.newUsersLastMonth,
-          newUsersLast6Months: usersStats.statistics.newUsersLast6Months
+          // Eliminamos los campos que ya no existen
         },
         popularProducts: popularProducts.products,
         recentOrders: orders.orders,
-        totalProducts: productsData.pagination.total
+        totalProducts: productsData.pagination.total,
+        totalSales: orders.totalSales || 0,
+        totalOrders: orders.totalOrders || 0,
+        // Añadimos las fechas del filtro para mostrarlas en la UI
+        dateRange: {
+          startDate: usersStats.statistics.startDate,
+          endDate: usersStats.statistics.endDate
+        }
       };
     } catch (error) {
       console.error('Error fetching dashboard stats:', error);
@@ -132,4 +166,6 @@ const adminService = {
 };
 
 export default adminService;
+
+
 
