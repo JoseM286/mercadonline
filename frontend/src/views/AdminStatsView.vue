@@ -55,7 +55,7 @@
     <div v-else class="stats-grid">
       <!-- Estadísticas de usuarios -->
       <div class="stats-card">
-        <h3>Usuarios Registrados</h3>
+        <h3>Usuarios</h3>
         <div class="stats-value">{{ dashboardStats.users?.total || 0 }}</div>
         <div v-if="isFiltered" class="stats-note">Registrados en el período seleccionado</div>
       </div>
@@ -67,9 +67,10 @@
       </div>
       
       <!-- Estadísticas de productos y ventas -->
-      <div class="stats-card" v-if="!isFiltered || dashboardStats.totalProducts !== null">
+      <div class="stats-card">
         <h3>Productos</h3>
         <div class="stats-value">{{ dashboardStats.totalProducts || 0 }}</div>
+        <div v-if="isFiltered" class="stats-note">Creados en el período seleccionado</div>
       </div>
       
       <div class="stats-card">

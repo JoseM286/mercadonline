@@ -25,7 +25,7 @@ const adminService = {
   },
 
   // Product management
-  async getProducts(page = 1, limit = 10, search = '', categoryId = null) {
+  async getProducts(page = 1, limit = 10, search = '', categoryId = null, startDate = null, endDate = null) {
     let url = `${API_URL}/products/list?page=${page}&limit=${limit}`;
     
     if (search) {
@@ -34,6 +34,14 @@ const adminService = {
     
     if (categoryId) {
       url += `&category=${categoryId}`;
+    }
+    
+    if (startDate) {
+      url += `&start_date=${startDate}`;
+    }
+    
+    if (endDate) {
+      url += `&end_date=${endDate}`;
     }
     
     const response = await axios.get(url);
@@ -110,8 +118,9 @@ const adminService = {
     return response.data;
   },
 
-  async getPopularProducts(limit = 5, useRatio = true, startDate = null, endDate = null) {
-    let url = `${API_URL}/products/popular?limit=${limit}&use_ratio=${useRatio}`;
+  // Obtener productos populares
+  async getPopularProducts(limit = 5, startDate = null, endDate = null) {
+    let url = `${API_URL}/products/popular?limit=${limit}`;
     
     if (startDate) {
       url += `&start_date=${startDate}`;
@@ -134,9 +143,9 @@ const adminService = {
       // Make requests in parallel and use timeout to prevent hanging requests
       const promises = [
         this.getUserStatistics(startDate, endDate),
-        this.getPopularProducts(limit, true, startDate, endDate),
+        this.getPopularProducts(limit, startDate, endDate), // Eliminamos el parámetro useRatio
         this.getOrders(1, limit, null, null, startDate, endDate),
-        this.getProducts(1, 10) // Just need pagination info, reduce items
+        this.getProducts(1, 10, '', null, startDate, endDate)
       ];
       
       const [usersStats, popularProducts, orders, productsData] = await Promise.all(promises);
@@ -148,10 +157,9 @@ const adminService = {
         },
         popularProducts: popularProducts.products,
         recentOrders: orders.orders,
-        totalProducts: startDate || endDate ? null : productsData.pagination.total, // Solo mostrar total si no hay filtro
+        totalProducts: productsData.pagination.total,
         totalSales: orders.totalSales || 0,
         totalOrders: orders.totalOrders || 0,
-        // Añadimos las fechas del filtro para mostrarlas en la UI
         dateRange: {
           startDate: usersStats.statistics.startDate,
           endDate: usersStats.statistics.endDate
@@ -165,6 +173,8 @@ const adminService = {
 };
 
 export default adminService;
+
+
 
 
 
