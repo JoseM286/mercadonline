@@ -68,6 +68,10 @@ const goToAdminProducts = () => {
   router.push('/admin/products');
 };
 
+const goToAdminOrders = () => {
+  router.push('/admin/orders');
+};
+
 const goToAdminUsers = () => {
   router.push('/admin/users');
 };
@@ -151,6 +155,7 @@ const handleLogout = async () => {
               <template v-if="isAdmin">
                 <a @click="goToAdminStats" style="cursor: pointer;">Estadísticas</a>
                 <a @click="goToAdminProducts" style="cursor: pointer;">Gestionar Productos</a>
+                <a @click="goToAdminOrders" style="cursor: pointer;">Gestionar Pedidos</a>
                 <a @click="goToAdminUsers" style="cursor: pointer;">Gestionar Usuarios</a>
               </template>
               <a @click="handleLogout" style="cursor: pointer;">Cerrar sesión</a>
@@ -391,6 +396,7 @@ const handleLogout = async () => {
   }
 }
 </style>
+
 
 
 

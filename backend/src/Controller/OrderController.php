@@ -315,87 +315,68 @@ class OrderController extends AbstractController
         }
     }
 
-    #[Route('/update/{id}/status', name: 'app_order_update_status', methods: ['PUT'])]
+    #[Route('/{id}/status', name: 'app_order_update_status', methods: ['PUT'])]
     #[IsGranted('ROLE_ADMIN')]
-    public function updateOrderStatus(int $id, Request $request): JsonResponse
+    public function updateOrderStatus(Request $request, Order $order): JsonResponse
     {
-        $order = $this->orderRepository->find($id);
-
-        if (!$order) {
-            return $this->json([
-                'error' => 'Pedido no encontrado'
-            ], Response::HTTP_NOT_FOUND);
-        }
-
-        $data = json_decode($request->getContent(), true);
-
-        // Validar datos
-        if (!isset($data['status'])) {
-            return $this->json([
-                'error' => 'El estado es obligatorio'
-            ], Response::HTTP_BAD_REQUEST);
-        }
-
-        $status = $data['status'];
-
-        // Verificar que el estado sea válido
-        $validStatuses = [
-            self::STATUS_PENDING,
-            self::STATUS_PAID,
-            self::STATUS_PROCESSING,
-            self::STATUS_SHIPPED,
-            self::STATUS_DELIVERED,
-            self::STATUS_CANCELLED
-        ];
-
-        if (!in_array($status, $validStatuses)) {
-            return $this->json([
-                'error' => 'Estado no válido',
-                'valid_statuses' => $validStatuses
-            ], Response::HTTP_BAD_REQUEST);
-        }
-
         try {
-            // Si se está cancelando el pedido, restaurar stock y decrementar ventas
-            if ($status === self::STATUS_CANCELLED && $order->getStatus() !== self::STATUS_CANCELLED) {
-                foreach ($order->getOrderItems() as $orderItem) {
-                    $product = $orderItem->getProduct();
-                    $itemQuantity = $orderItem->getQuantity();
-                    
-                    // Restaurar stock
-                    $product->setStock($product->getStock() + $itemQuantity);
-                    
-                    // Decrementar contador de ventas si el pedido estaba en un estado avanzado
-                    if (in_array($order->getStatus(), [
-                        self::STATUS_PAID, 
-                        self::STATUS_PROCESSING, 
-                        self::STATUS_SHIPPED, 
-                        self::STATUS_DELIVERED
-                    ])) {
-                        // Asegurarse de que no quede negativo
-                        $newSales = max(0, $product->getSales() - $itemQuantity);
-                        $product->setSales($newSales);
-                    }
-                }
+            $data = json_decode($request->getContent(), true);
+            
+            if (!isset($data['status'])) {
+                return $this->json([
+                    'error' => 'El estado del pedido es requerido'
+                ], Response::HTTP_BAD_REQUEST);
             }
-
-            // Actualizar estado del pedido
+            
+            $status = strtoupper($data['status']);
+            $validStatuses = ['PENDING', 'PAID', 'PROCESSING', 'SHIPPED', 'DELIVERED', 'CANCELLED'];
+            
+            if (!in_array($status, $validStatuses)) {
+                return $this->json([
+                    'error' => 'Estado de pedido no válido'
+                ], Response::HTTP_BAD_REQUEST);
+            }
+            
             $order->setStatus($status);
             $order->setUpdatedAt(new \DateTime());
-
+            
+            $this->entityManager->persist($order);
             $this->entityManager->flush();
-
+            
             return $this->json([
                 'message' => 'Estado del pedido actualizado correctamente',
                 'order' => [
                     'id' => $order->getId(),
-                    'status' => $order->getStatus(),
-                    'updated_at' => $order->getUpdatedAt()->format('Y-m-d H:i:s')
+                    'status' => $order->getStatus()
                 ]
             ]);
         } catch (\Exception $e) {
             return $this->json([
                 'error' => 'Error al actualizar el estado del pedido: ' . $e->getMessage()
+            ], Response::HTTP_INTERNAL_SERVER_ERROR);
+        }
+    }
+
+    #[Route('/{id}', name: 'app_order_delete', methods: ['DELETE'])]
+    #[IsGranted('ROLE_ADMIN')]
+    public function deleteOrder(Order $order): JsonResponse
+    {
+        try {
+            // Eliminar los elementos del pedido primero
+            foreach ($order->getOrderItems() as $item) {
+                $this->entityManager->remove($item);
+            }
+            
+            // Luego eliminar el pedido
+            $this->entityManager->remove($order);
+            $this->entityManager->flush();
+            
+            return $this->json([
+                'message' => 'Pedido eliminado correctamente'
+            ]);
+        } catch (\Exception $e) {
+            return $this->json([
+                'error' => 'Error al eliminar el pedido: ' . $e->getMessage()
             ], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
@@ -480,6 +461,7 @@ class OrderController extends AbstractController
         }
     }
 }
+
 
 
 

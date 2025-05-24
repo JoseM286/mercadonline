@@ -37,28 +37,23 @@ class AdminService {
     return response.data;
   }
   
-  // Obtener pedidos
-  async getOrders(page = 1, limit = 10, status = null, userId = null, startDate = null, endDate = null) {
-    let url = `${API_URL}/orders/admin/list?page=${page}&limit=${limit}`;
-    
-    if (status) {
-      url += `&status=${status}`;
+  // Obtener pedidos con filtros
+  async getOrders(page = 1, limit = 10, search = null, status = null, startDate = null, endDate = null) {
+    try {
+      // Corregir la URL para que coincida con la ruta definida en el backend
+      let url = `${API_URL}/admin/orders?page=${page}&limit=${limit}`;
+      
+      if (search) url += `&search=${encodeURIComponent(search)}`;
+      if (status) url += `&status=${encodeURIComponent(status)}`;
+      if (startDate) url += `&startDate=${encodeURIComponent(startDate)}`;
+      if (endDate) url += `&endDate=${encodeURIComponent(endDate)}`;
+      
+      const response = await axios.get(url);
+      return response.data;
+    } catch (error) {
+      console.error('Error fetching orders:', error);
+      throw error;
     }
-    
-    if (userId) {
-      url += `&user_id=${userId}`;
-    }
-    
-    if (startDate) {
-      url += `&start_date=${startDate}`;
-    }
-    
-    if (endDate) {
-      url += `&end_date=${endDate}`;
-    }
-    
-    const response = await axios.get(url);
-    return response.data;
   }
   
   // Obtener productos
@@ -107,7 +102,46 @@ class AdminService {
       throw error;
     }
   }
+
+  // Actualizar estado de un pedido
+  async updateOrderStatus(orderId, newStatus) {
+    try {
+      const response = await axios.put(`${API_URL}/orders/${orderId}/status`, {
+        status: newStatus
+      });
+      return response.data;
+    } catch (error) {
+      console.error('Error updating order status:', error);
+      throw error;
+    }
+  }
+
+  // Eliminar un pedido
+  async deleteOrder(orderId) {
+    try {
+      const response = await axios.delete(`${API_URL}/orders/${orderId}`);
+      return response.data;
+    } catch (error) {
+      console.error('Error deleting order:', error);
+      throw error;
+    }
+  }
+
+  // Obtener usuarios
+  async getUsers() {
+    try {
+      const response = await axios.get(`${API_URL}/admin/users`);
+      return response.data;
+    } catch (error) {
+      console.error('Error fetching users:', error);
+      throw error;
+    }
+  }
 }
 
 export default new AdminService();
+
+
+
+
 

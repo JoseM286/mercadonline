@@ -5,10 +5,13 @@ namespace App\Controller;
 use App\Repository\UserRepository;
 use App\Repository\ProductRepository;
 use App\Repository\OrderRepository;
+use App\Entity\Order;
 use App\Trait\DateFilterTrait;
+use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
+use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Annotation\Route;
 use Symfony\Component\Security\Http\Attribute\IsGranted;
 
@@ -21,7 +24,8 @@ class AdminController extends AbstractController
     public function __construct(
         private UserRepository $userRepository,
         private ProductRepository $productRepository,
-        private OrderRepository $orderRepository
+        private OrderRepository $orderRepository,
+        private EntityManagerInterface $entityManager
     ) {}
 
     #[Route('/statistics', name: 'app_admin_user_statistics', methods: ['GET'])]
@@ -139,7 +143,107 @@ class AdminController extends AbstractController
             ], JsonResponse::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
+
+    #[Route('/orders', name: 'app_admin_orders', methods: ['GET'])]
+    public function getOrders(Request $request): JsonResponse
+    {
+        try {
+            // Parámetros de paginación
+            $page = max(1, $request->query->getInt('page', 1));
+            $limit = min(50, $request->query->getInt('limit', 10));
+            $offset = ($page - 1) * $limit;
+            
+            // Filtros
+            $search = $request->query->get('search');
+            $status = $request->query->get('status');
+            
+            // Procesar filtros de fecha
+            $dateFilters = $this->processDateFilters($request);
+            if ($dateFilters['error']) {
+                return $this->json([
+                    'error' => $dateFilters['error']
+                ], Response::HTTP_BAD_REQUEST);
+            }
+            
+            $startDate = $dateFilters['startDate'];
+            $endDate = $dateFilters['endDate'];
+            
+            // Construir consulta
+            $queryBuilder = $this->entityManager->createQueryBuilder();
+            $queryBuilder->select('o')
+                ->from(Order::class, 'o')
+                ->leftJoin('o.user', 'u')
+                ->orderBy('o.createdAt', 'DESC');
+            
+            // Aplicar filtros
+            if ($search) {
+                $queryBuilder->andWhere(
+                    $queryBuilder->expr()->orX(
+                        $queryBuilder->expr()->like('o.id', ':search'),
+                        $queryBuilder->expr()->like('u.name', ':search'),
+                        $queryBuilder->expr()->like('u.email', ':search')
+                    )
+                )
+                ->setParameter('search', '%' . $search . '%');
+            }
+            
+            if ($status) {
+                $queryBuilder->andWhere('o.status = :status')
+                    ->setParameter('status', strtoupper($status));
+            }
+            
+            if ($startDate) {
+                $queryBuilder->andWhere('o.createdAt >= :startDate')
+                    ->setParameter('startDate', $startDate);
+            }
+            
+            if ($endDate) {
+                $queryBuilder->andWhere('o.createdAt <= :endDate')
+                    ->setParameter('endDate', $endDate);
+            }
+            
+            // Contar total de resultados para paginación
+            $totalQuery = clone $queryBuilder;
+            $totalQuery->select('COUNT(o.id)');
+            $total = $totalQuery->getQuery()->getSingleScalarResult();
+            
+            // Aplicar paginación
+            $queryBuilder->setFirstResult($offset)
+                ->setMaxResults($limit);
+            
+            $orders = $queryBuilder->getQuery()->getResult();
+            
+            // Formatear resultados
+            $ordersData = [];
+            foreach ($orders as $order) {
+                $ordersData[] = [
+                    'id' => $order->getId(),
+                    'user' => $order->getUser() ? [
+                        'id' => $order->getUser()->getId(),
+                        'name' => $order->getUser()->getName(),
+                        'email' => $order->getUser()->getEmail()
+                    ] : null,
+                    'total_amount' => $order->getTotalAmount(),
+                    'status' => $order->getStatus(),
+                    'shipping_address' => $order->getShippingAddress(),
+                    'created_at' => $order->getCreatedAt()->format('Y-m-d H:i:s')
+                ];
+            }
+            
+            return $this->json([
+                'orders' => $ordersData,
+                'pagination' => [
+                    'total' => $total,
+                    'page' => $page,
+                    'limit' => $limit,
+                    'pages' => ceil($total / $limit)
+                ]
+            ]);
+        } catch (\Exception $e) {
+            return $this->json([
+                'error' => 'Error al obtener pedidos: ' . $e->getMessage()
+            ], Response::HTTP_INTERNAL_SERVER_ERROR);
+        }
+    }
 }
-
-
 

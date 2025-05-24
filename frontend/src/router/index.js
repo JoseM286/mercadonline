@@ -84,6 +84,12 @@ const router = createRouter({
       component: () => import('../views/AdminUsersView.vue'),
       meta: { requiresAuth: true, requiresAdmin: true }
     },
+    {
+      path: '/admin/orders',
+      name: 'admin-orders',
+      component: () => import('../views/AdminOrdersView.vue'),
+      meta: { requiresAuth: true, requiresAdmin: true }
+    },
   ],
 })
 
@@ -113,6 +119,9 @@ router.beforeEach((to, from, next) => {
 })
 
 export default router
+
+
+
 
 
 
