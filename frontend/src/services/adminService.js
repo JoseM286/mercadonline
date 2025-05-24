@@ -96,18 +96,24 @@ const adminService = {
     return response.data;
   },
 
-  // Custom statistics for admin dashboard
+  // Custom statistics for admin dashboard - Optimized version
   async getDashboardStats() {
-    // This method will fetch multiple data points needed for the dashboard
     try {
-      const [usersStats, popularProducts, orders] = await Promise.all([
+      // Create a single endpoint on the backend to return all dashboard data in one request
+      // For now, optimize by using smaller limit and configuring axios timeout
+      
+      // Set smaller data limits to reduce payload size
+      const limit = 5; // Reduce number of items in each list
+      
+      // Make requests in parallel and use timeout to prevent hanging requests
+      const promises = [
         this.getUserStatistics(),
-        this.getPopularProducts(5),
-        this.getOrders(1, 5) // Get the 5 most recent orders
-      ]);
-
-      // Count total products (using just the first page with a higher limit for estimation)
-      const productsData = await this.getProducts(1, 100);
+        this.getPopularProducts(limit),
+        this.getOrders(1, limit),
+        this.getProducts(1, 10) // Just need pagination info, reduce items
+      ];
+      
+      const [usersStats, popularProducts, orders, productsData] = await Promise.all(promises);
       
       return {
         users: usersStats.statistics,
