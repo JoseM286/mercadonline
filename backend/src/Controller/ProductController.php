@@ -6,7 +6,9 @@ use App\Entity\Product;
 use App\Entity\Category;
 use App\Repository\ProductRepository;
 use App\Repository\CategoryRepository;
+use App\Trait\DateFilterTrait;
 use Doctrine\ORM\EntityManagerInterface;
+use Psr\Log\LoggerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
@@ -17,10 +19,13 @@ use Symfony\Component\Security\Http\Attribute\IsGranted;
 #[Route('/api/products')]
 class ProductController extends AbstractController
 {
+    use DateFilterTrait;
+    
     public function __construct(
         private EntityManagerInterface $entityManager,
         private ProductRepository $productRepository,
-        private CategoryRepository $categoryRepository
+        private CategoryRepository $categoryRepository,
+        private LoggerInterface $logger
     ) {}
 
     #[Route('/list', name: 'app_product_list', methods: ['GET'])]
@@ -49,31 +54,14 @@ class ProductController extends AbstractController
         // Búsqueda por nombre
         $search = $request->query->get('search');
         
-        // Fechas
-        $startDate = null;
-        $endDate = null;
-        
-        if ($request->query->has('start_date')) {
-            try {
-                $startDate = new \DateTimeImmutable($request->query->get('start_date'));
-            } catch (\Exception $e) {
-                return $this->json([
-                    'error' => 'Formato de fecha de inicio inválido. Use el formato YYYY-MM-DD.'
-                ], Response::HTTP_BAD_REQUEST);
-            }
+        // Procesar filtros de fecha
+        $dateFilters = $this->processDateFilters($request);
+        if ($dateFilters['error']) {
+            return $this->createDateErrorResponse($dateFilters['error']);
         }
         
-        if ($request->query->has('end_date')) {
-            try {
-                $endDate = new \DateTimeImmutable($request->query->get('end_date'));
-                // Ajustar la fecha de fin para incluir todo el día
-                $endDate = $endDate->modify('+1 day')->modify('-1 second');
-            } catch (\Exception $e) {
-                return $this->json([
-                    'error' => 'Formato de fecha de fin inválido. Use el formato YYYY-MM-DD.'
-                ], Response::HTTP_BAD_REQUEST);
-            }
-        }
+        $startDate = $dateFilters['startDate'];
+        $endDate = $dateFilters['endDate'];
 
         // Obtener productos
         $products = [];
@@ -308,31 +296,14 @@ class ProductController extends AbstractController
             // Parámetros
             $limit = min(50, $request->query->getInt('limit', 20));
             
-            // Fechas
-            $startDate = null;
-            $endDate = null;
-            
-            if ($request->query->has('start_date')) {
-                try {
-                    $startDate = new \DateTimeImmutable($request->query->get('start_date'));
-                } catch (\Exception $e) {
-                    return $this->json([
-                        'error' => 'Formato de fecha de inicio inválido. Use el formato YYYY-MM-DD.'
-                    ], Response::HTTP_BAD_REQUEST);
-                }
+            // Procesar filtros de fecha
+            $dateFilters = $this->processDateFilters($request);
+            if ($dateFilters['error']) {
+                return $this->createDateErrorResponse($dateFilters['error']);
             }
             
-            if ($request->query->has('end_date')) {
-                try {
-                    $endDate = new \DateTimeImmutable($request->query->get('end_date'));
-                    // Ajustar la fecha de fin para incluir todo el día
-                    $endDate = $endDate->modify('+1 day')->modify('-1 second');
-                } catch (\Exception $e) {
-                    return $this->json([
-                        'error' => 'Formato de fecha de fin inválido. Use el formato YYYY-MM-DD.'
-                    ], Response::HTTP_BAD_REQUEST);
-                }
-            }
+            $startDate = $dateFilters['startDate'];
+            $endDate = $dateFilters['endDate'];
             
             // Obtener productos populares
             $productsData = [];
@@ -375,6 +346,7 @@ class ProductController extends AbstractController
         }
     }
 }
+
 
 
 

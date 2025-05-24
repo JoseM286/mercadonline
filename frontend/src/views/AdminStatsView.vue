@@ -146,9 +146,11 @@
 import { ref, onMounted, computed } from 'vue';
 import adminService from '@/services/adminService';
 
-// Estado para los datos del dashboard
 const dashboardStats = ref({
-  users: {},
+  users: {
+    total: 0,
+    totalAdmins: 0
+  },
   popularProducts: [],
   recentOrders: [],
   totalProducts: 0,
@@ -159,39 +161,46 @@ const dashboardStats = ref({
     endDate: null
   }
 });
+
 const loading = ref(true);
 const error = ref(null);
-
-// Estado para filtros de fecha
 const startDate = ref('');
 const endDate = ref('');
+
+// Fecha actual formateada para el input date
 const today = computed(() => {
-  const now = new Date();
-  return now.toISOString().split('T')[0];
+  const date = new Date();
+  return date.toISOString().split('T')[0];
 });
 
-// Comprobar si hay filtro activo
+// Verificar si hay filtros aplicados
 const isFiltered = computed(() => {
-  return dashboardStats.value.dateRange && 
-         (dashboardStats.value.dateRange.startDate || dashboardStats.value.dateRange.endDate);
+  return startDate.value || endDate.value;
 });
 
-// Formatear fecha
+// Formatear fecha para mostrar
 const formatDate = (dateString) => {
+  if (!dateString) return 'No especificada';
+  
   const date = new Date(dateString);
-  return date.toLocaleDateString('es-ES');
+  return date.toLocaleDateString('es-ES', {
+    year: 'numeric',
+    month: 'long',
+    day: 'numeric'
+  });
 };
 
-// Traducir estados de pedidos
+// Traducir estado de pedido
 const translateStatus = (status) => {
   const statusMap = {
-    'pending': 'Pendiente',
-    'paid': 'Pagado',
-    'processing': 'Procesando',
-    'shipped': 'Enviado',
-    'delivered': 'Entregado',
-    'cancelled': 'Cancelado'
+    'PENDING': 'Pendiente',
+    'PAID': 'Pagado',
+    'PROCESSING': 'Procesando',
+    'SHIPPED': 'Enviado',
+    'DELIVERED': 'Entregado',
+    'CANCELLED': 'Cancelado'
   };
+  
   return statusMap[status] || status;
 };
 
@@ -213,33 +222,17 @@ const fetchDashboardStats = async (startDate = null, endDate = null) => {
   error.value = null;
   
   try {
-    // Obtener estadísticas del dashboard con filtros de fecha
-    const stats = await adminService.getDashboardStats(startDate, endDate);
-    dashboardStats.value = stats;
-    
-    // Calcular el total de ventas sumando los importes de los pedidos
-    let totalSales = 0;
-    let totalOrders = 0;
-    
-    if (stats.recentOrders && stats.recentOrders.length) {
-      totalOrders = stats.totalOrders || stats.recentOrders.length;
-      totalSales = stats.totalSales || stats.recentOrders.reduce((sum, order) => {
-        return sum + parseFloat(order.total_amount || 0);
-      }, 0);
-    }
-    
-    dashboardStats.value.totalSales = totalSales.toFixed(2);
-    dashboardStats.value.totalOrders = totalOrders;
-    
+    // Usar el nuevo método optimizado que hace una sola llamada a la API
+    const data = await adminService.getDashboardStats(startDate, endDate);
+    dashboardStats.value = data;
   } catch (err) {
     console.error('Error al obtener estadísticas:', err);
-    error.value = 'No se pudieron cargar las estadísticas. Por favor, inténtalo de nuevo.';
+    error.value = 'Error al cargar las estadísticas. Por favor, inténtalo de nuevo.';
   } finally {
     loading.value = false;
   }
 };
 
-// Cargar estadísticas al montar el componente
 onMounted(() => {
   fetchDashboardStats();
 });

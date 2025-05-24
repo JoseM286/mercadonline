@@ -9,6 +9,7 @@ use App\Repository\CartRepository;
 use App\Repository\OrderRepository;
 use App\Repository\ProductRepository;
 use Doctrine\ORM\EntityManagerInterface;
+use Psr\Log\LoggerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
@@ -16,11 +17,14 @@ use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Annotation\Route;
 use Symfony\Component\Security\Http\Attribute\CurrentUser;
 use Symfony\Component\Security\Http\Attribute\IsGranted;
+use App\Trait\DateFilterTrait;
 
 #[Route('/api/orders')]
 #[IsGranted('ROLE_USER')]
 class OrderController extends AbstractController
 {
+    use DateFilterTrait;
+    
     // Estados posibles de un pedido
     const STATUS_PENDING = 'pending';
     const STATUS_PAID = 'paid';
@@ -409,94 +413,75 @@ class OrderController extends AbstractController
         $status = $request->query->get('status');
         $userId = $request->query->get('user_id');
         
-        // Fechas
-        $startDate = null;
-        $endDate = null;
-        
-        if ($request->query->has('start_date')) {
-            try {
-                $startDate = new \DateTimeImmutable($request->query->get('start_date'));
-            } catch (\Exception $e) {
-                return $this->json([
-                    'error' => 'Formato de fecha de inicio inválido. Use el formato YYYY-MM-DD.'
-                ], Response::HTTP_BAD_REQUEST);
-            }
+        // Procesar filtros de fecha
+        $dateFilters = $this->processDateFilters($request);
+        if ($dateFilters['error']) {
+            return $this->createDateErrorResponse($dateFilters['error']);
         }
         
-        if ($request->query->has('end_date')) {
-            try {
-                $endDate = new \DateTimeImmutable($request->query->get('end_date'));
-                // Ajustar la fecha de fin para incluir todo el día
-                $endDate = $endDate->modify('+1 day')->modify('-1 second');
-            } catch (\Exception $e) {
-                return $this->json([
-                    'error' => 'Formato de fecha de fin inválido. Use el formato YYYY-MM-DD.'
-                ], Response::HTTP_BAD_REQUEST);
-            }
-        }
-
-        // Criterios de filtrado
-        $criteria = [];
-        if ($status) {
-            $criteria['status'] = $status;
-        }
-        if ($userId) {
-            $criteria['user'] = $userId;
-        }
-
-        // Obtener pedidos con filtro de fechas
-        $orders = [];
-        $total = 0;
-        $totalSales = 0;
+        $startDate = $dateFilters['startDate'];
+        $endDate = $dateFilters['endDate'];
         
-        if (!empty($criteria)) {
-            // Si hay criterios específicos, usamos findBy
-            $orders = $this->orderRepository->findBy(
-                $criteria,
-                ['createdAt' => 'DESC'],
-                $limit,
+        try {
+            // Obtener pedidos
+            $orders = $this->orderRepository->findByFilters(
+                $status, 
+                $userId ? (int)$userId : null, 
+                $startDate, 
+                $endDate, 
+                $limit, 
                 $offset
             );
-            $total = $this->orderRepository->count($criteria);
-        } else {
-            // Si no hay criterios específicos, usamos nuestro método personalizado
-            $orders = $this->orderRepository->findByDateRange($startDate, $endDate, $limit, $offset);
-            $total = $this->orderRepository->countByDateRange($startDate, $endDate);
+            
+            $total = $this->orderRepository->countByFilters(
+                $status, 
+                $userId ? (int)$userId : null, 
+                $startDate, 
+                $endDate
+            );
+            
+            // Calcular el total de ventas en el rango de fechas
             $totalSales = $this->orderRepository->calculateTotalSalesInDateRange($startDate, $endDate);
-        }
+            
+            // Formatear respuesta
+            $ordersData = [];
+            foreach ($orders as $order) {
+                $ordersData[] = [
+                    'id' => $order->getId(),
+                    'user' => [
+                        'id' => $order->getUser()->getId(),
+                        'email' => $order->getUser()->getEmail(),
+                        'name' => $order->getUser()->getName()
+                    ],
+                    'total_amount' => $order->getTotalAmount(),
+                    'status' => $order->getStatus(),
+                    'shipping_address' => $order->getShippingAddress(),
+                    'created_at' => $order->getCreatedAt()->format('Y-m-d H:i:s'),
+                    'updated_at' => $order->getUpdatedAt()->format('Y-m-d H:i:s'),
+                    'items_count' => $order->getOrderItems()->count()
+                ];
+            }
 
-        // Formatear respuesta
-        $ordersData = [];
-        foreach ($orders as $order) {
-            $ordersData[] = [
-                'id' => $order->getId(),
-                'user' => [
-                    'id' => $order->getUser()->getId(),
-                    'email' => $order->getUser()->getEmail(),
-                    'name' => $order->getUser()->getName()
+            return $this->json([
+                'orders' => $ordersData,
+                'pagination' => [
+                    'total' => $total,
+                    'page' => $page,
+                    'limit' => $limit,
+                    'pages' => ceil($total / $limit)
                 ],
-                'total_amount' => $order->getTotalAmount(),
-                'status' => $order->getStatus(),
-                'shipping_address' => $order->getShippingAddress(),
-                'created_at' => $order->getCreatedAt()->format('Y-m-d H:i:s'),
-                'updated_at' => $order->getUpdatedAt()->format('Y-m-d H:i:s'),
-                'items_count' => $order->getOrderItems()->count()
-            ];
+                'totalSales' => $totalSales,
+                'totalOrders' => $total
+            ]);
+        } catch (\Exception $e) {
+            return $this->json([
+                'error' => 'Error al obtener pedidos: ' . $e->getMessage()
+            ], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
-
-        return $this->json([
-            'orders' => $ordersData,
-            'pagination' => [
-                'total' => $total,
-                'page' => $page,
-                'limit' => $limit,
-                'pages' => ceil($total / $limit)
-            ],
-            'totalOrders' => $total,
-            'totalSales' => $totalSales
-        ]);
     }
 }
+
+
 
 
 

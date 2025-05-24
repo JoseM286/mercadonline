@@ -2,13 +2,13 @@
 
 namespace App\Controller;
 
-use App\Entity\User;
 use App\Repository\UserRepository;
-use Doctrine\ORM\EntityManagerInterface;
+use App\Repository\ProductRepository;
+use App\Repository\OrderRepository;
+use App\Trait\DateFilterTrait;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
-use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Annotation\Route;
 use Symfony\Component\Security\Http\Attribute\IsGranted;
 
@@ -16,166 +16,25 @@ use Symfony\Component\Security\Http\Attribute\IsGranted;
 #[IsGranted('ROLE_ADMIN')]
 class AdminController extends AbstractController
 {
+    use DateFilterTrait;
+    
     public function __construct(
-        private EntityManagerInterface $entityManager,
-        private UserRepository $userRepository
+        private UserRepository $userRepository,
+        private ProductRepository $productRepository,
+        private OrderRepository $orderRepository
     ) {}
-
-    #[Route('/users', name: 'app_admin_list_users', methods: ['GET'])]
-    public function listUsers(): JsonResponse
-    {
-        $users = $this->userRepository->findAll();
-
-        $usersData = [];
-        foreach ($users as $user) {
-            $usersData[] = [
-                'id' => $user->getId(),
-                'email' => $user->getEmail(),
-                'name' => $user->getName(),
-                'role' => $user->getRole(),
-                'address' => $user->getAddress(),
-                'phone' => $user->getPhone(),
-                'createdAt' => $user->getCreatedAt()?->format('Y-m-d H:i:s')
-            ];
-        }
-
-        return $this->json([
-            'users' => $usersData
-        ]);
-    }
-
-    #[Route('/users/{id}', name: 'app_admin_get_user', methods: ['GET'])]
-    public function getUserById(int $id): JsonResponse
-    {
-        $user = $this->userRepository->find($id);
-
-        if (!$user) {
-            return $this->json([
-                'error' => 'Usuario no encontrado'
-            ], Response::HTTP_NOT_FOUND);
-        }
-
-        return $this->json([
-            'user' => [
-                'id' => $user->getId(),
-                'email' => $user->getEmail(),
-                'name' => $user->getName(),
-                'role' => $user->getRole(),
-                'address' => $user->getAddress(),
-                'phone' => $user->getPhone(),
-                'createdAt' => $user->getCreatedAt()?->format('Y-m-d H:i:s')
-            ]
-        ]);
-    }
-
-    #[Route('/users/{id}/change-role', name: 'app_admin_change_user_role', methods: ['PUT'])]
-    public function changeUserRole(Request $request, int $id): JsonResponse
-    {
-        $user = $this->userRepository->find($id);
-
-        if (!$user) {
-            return $this->json([
-                'error' => 'Usuario no encontrado'
-            ], Response::HTTP_NOT_FOUND);
-        }
-
-        $currentUser = $this->getUser();
-        // Evitar que un admin cambie su propio rol
-        if ($user->getId() === ($currentUser instanceof User ? $currentUser->getId() : null)) {
-            return $this->json([
-                'error' => 'No puedes cambiar tu propio rol'
-            ], Response::HTTP_BAD_REQUEST);
-        }
-
-        $data = json_decode($request->getContent(), true);
-
-        if (!isset($data['role']) || !in_array($data['role'], [User::ROLE_USER, User::ROLE_ADMIN])) {
-            return $this->json([
-                'error' => 'Rol no válido'
-            ], Response::HTTP_BAD_REQUEST);
-        }
-
-        try {
-            $user->setRole($data['role']);
-            $this->entityManager->flush();
-
-            return $this->json([
-                'message' => 'Rol actualizado correctamente',
-                'user' => [
-                    'id' => $user->getId(),
-                    'email' => $user->getEmail(),
-                    'name' => $user->getName(),
-                    'role' => $user->getRole()
-                ]
-            ]);
-        } catch (\Exception $e) {
-            return $this->json([
-                'error' => 'Error al actualizar el rol'
-            ], Response::HTTP_INTERNAL_SERVER_ERROR);
-        }
-    }
-
-    #[Route('/users/{id}', name: 'app_admin_delete_user', methods: ['DELETE'])]
-    public function deleteUser(int $id): JsonResponse
-    {
-        $user = $this->userRepository->find($id);
-
-        if (!$user) {
-            return $this->json([
-                'error' => 'Usuario no encontrado'
-            ], Response::HTTP_NOT_FOUND);
-        }
-
-        // Evitar que un admin se elimine a sí mismo
-        $currentUser = $this->getUser();
-        if ($user->getId() === ($currentUser instanceof User ? $currentUser->getId() : null)) {
-            return $this->json([
-                'error' => 'No puedes eliminar tu propia cuenta'
-            ], Response::HTTP_BAD_REQUEST);
-        }
-
-        try {
-            $this->entityManager->remove($user);
-            $this->entityManager->flush();
-
-            return $this->json([
-                'message' => 'Usuario eliminado correctamente'
-            ]);
-        } catch (\Exception $e) {
-            return $this->json([
-                'error' => 'Error al eliminar el usuario'
-            ], Response::HTTP_INTERNAL_SERVER_ERROR);
-        }
-    }
 
     #[Route('/statistics', name: 'app_admin_user_statistics', methods: ['GET'])]
     public function getUserStatistics(Request $request): JsonResponse
     {
-        // Verificar si se proporcionan fechas de inicio y fin
-        $startDate = null;
-        $endDate = null;
-        
-        if ($request->query->has('start_date')) {
-            try {
-                $startDate = new \DateTimeImmutable($request->query->get('start_date'));
-            } catch (\Exception $e) {
-                return $this->json([
-                    'error' => 'Formato de fecha de inicio inválido. Use el formato YYYY-MM-DD.'
-                ], Response::HTTP_BAD_REQUEST);
-            }
+        // Procesar filtros de fecha
+        $dateFilters = $this->processDateFilters($request);
+        if ($dateFilters['error']) {
+            return $this->createDateErrorResponse($dateFilters['error']);
         }
         
-        if ($request->query->has('end_date')) {
-            try {
-                $endDate = new \DateTimeImmutable($request->query->get('end_date'));
-                // Ajustar la fecha de fin para incluir todo el día
-                $endDate = $endDate->modify('+1 day')->modify('-1 second');
-            } catch (\Exception $e) {
-                return $this->json([
-                    'error' => 'Formato de fecha de fin inválido. Use el formato YYYY-MM-DD.'
-                ], Response::HTTP_BAD_REQUEST);
-            }
-        }
+        $startDate = $dateFilters['startDate'];
+        $endDate = $dateFilters['endDate'];
         
         $statistics = $this->userRepository->getStatistics($startDate, $endDate);
         
@@ -183,5 +42,104 @@ class AdminController extends AbstractController
             'statistics' => $statistics
         ]);
     }
+    
+    #[Route('/dashboard', name: 'app_admin_dashboard', methods: ['GET'])]
+    public function getDashboardStats(Request $request): JsonResponse
+    {
+        try {
+            // Procesar filtros de fecha
+            $dateFilters = $this->processDateFilters($request);
+            if ($dateFilters['error']) {
+                return $this->createDateErrorResponse($dateFilters['error']);
+            }
+            
+            $startDate = $dateFilters['startDate'];
+            $endDate = $dateFilters['endDate'];
+            
+            // Límite para productos populares y pedidos recientes
+            $limit = min(10, $request->query->getInt('limit', 5));
+            
+            // 1. Obtener estadísticas de usuarios
+            $userStats = $this->userRepository->getStatistics($startDate, $endDate);
+            
+            // 2. Obtener productos populares
+            $popularProducts = $this->productRepository->findMostPopularProducts($limit, $startDate, $endDate);
+            $popularProductsData = [];
+            
+            foreach ($popularProducts as $product) {
+                $popularProductsData[] = [
+                    'id' => $product->getId(),
+                    'name' => $product->getName(),
+                    'description' => $product->getDescription(),
+                    'price' => $product->getPrice(),
+                    'stock' => $product->getStock(),
+                    'sales' => $product->getSales(),
+                    'image_path' => $product->getImagePath(),
+                    'category' => [
+                        'id' => $product->getCategory()->getId(),
+                        'name' => $product->getCategory()->getName()
+                    ]
+                ];
+            }
+            
+            // 3. Obtener pedidos recientes
+            $recentOrders = $this->orderRepository->findByFilters(
+                null, // status
+                null, // userId
+                $startDate,
+                $endDate,
+                $limit,
+                0 // offset
+            );
+            
+            $recentOrdersData = [];
+            foreach ($recentOrders as $order) {
+                $recentOrdersData[] = [
+                    'id' => $order->getId(),
+                    'user' => [
+                        'id' => $order->getUser()->getId(),
+                        'email' => $order->getUser()->getEmail(),
+                        'name' => $order->getUser()->getName()
+                    ],
+                    'total_amount' => $order->getTotalAmount(),
+                    'status' => $order->getStatus(),
+                    'shipping_address' => $order->getShippingAddress(),
+                    'created_at' => $order->getCreatedAt()->format('Y-m-d H:i:s'),
+                    'updated_at' => $order->getUpdatedAt()->format('Y-m-d H:i:s'),
+                    'items_count' => $order->getOrderItems()->count()
+                ];
+            }
+            
+            // 4. Obtener total de productos
+            $totalProducts = $this->productRepository->countByDateRange($startDate, $endDate);
+            
+            // 5. Obtener total de ventas y pedidos
+            $totalSales = $this->orderRepository->calculateTotalSalesInDateRange($startDate, $endDate);
+            $totalOrders = $this->orderRepository->countByFilters(null, null, $startDate, $endDate);
+            
+            // Construir respuesta
+            return $this->json([
+                'users' => [
+                    'total' => $userStats['totalUsers'],
+                    'totalAdmins' => $userStats['totalAdmins'],
+                ],
+                'popularProducts' => $popularProductsData,
+                'recentOrders' => $recentOrdersData,
+                'totalProducts' => $totalProducts,
+                'totalSales' => $totalSales,
+                'totalOrders' => $totalOrders,
+                'dateRange' => [
+                    'startDate' => $startDate ? $startDate->format('Y-m-d') : null,
+                    'endDate' => $endDate ? $endDate->format('Y-m-d') : null
+                ]
+            ]);
+        } catch (\Exception $e) {
+            return $this->json([
+                'error' => 'Error al obtener estadísticas del dashboard: ' . $e->getMessage()
+            ], JsonResponse::HTTP_INTERNAL_SERVER_ERROR);
+        }
+    }
 }
+
+
 

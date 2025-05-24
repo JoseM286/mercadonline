@@ -1,40 +1,29 @@
 import axios from 'axios';
 
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000/api';
+const API_URL = import.meta.env.VITE_API_URL;
 
-const adminService = {
-  // User management
-  async getUsers() {
-    const response = await axios.get(`${API_URL}/admin/users`);
-    return response.data;
-  },
-
-  async getUserById(id) {
-    const response = await axios.get(`${API_URL}/admin/users/${id}`);
-    return response.data;
-  },
-
-  async changeUserRole(userId, role) {
-    const response = await axios.put(`${API_URL}/admin/users/${userId}/change-role`, { role });
-    return response.data;
-  },
-
-  async deleteUser(userId) {
-    const response = await axios.delete(`${API_URL}/admin/users/${userId}`);
-    return response.data;
-  },
-
-  // Product management
-  async getProducts(page = 1, limit = 10, search = '', categoryId = null, startDate = null, endDate = null) {
-    let url = `${API_URL}/products/list?page=${page}&limit=${limit}`;
+class AdminService {
+  // Obtener estadísticas de usuarios
+  async getUserStatistics(startDate = null, endDate = null) {
+    let url = `${API_URL}/admin/statistics`;
     
-    if (search) {
-      url += `&search=${encodeURIComponent(search)}`;
+    if (startDate || endDate) {
+      url += '?';
+      if (startDate) {
+        url += `start_date=${startDate}`;
+      }
+      if (endDate) {
+        url += startDate ? `&end_date=${endDate}` : `end_date=${endDate}`;
+      }
     }
     
-    if (categoryId) {
-      url += `&category=${categoryId}`;
-    }
+    const response = await axios.get(url);
+    return response.data;
+  }
+  
+  // Obtener productos populares
+  async getPopularProducts(limit = 5, startDate = null, endDate = null) {
+    let url = `${API_URL}/products/popular?limit=${limit}`;
     
     if (startDate) {
       url += `&start_date=${startDate}`;
@@ -46,29 +35,9 @@ const adminService = {
     
     const response = await axios.get(url);
     return response.data;
-  },
-
-  async getProductById(id) {
-    const response = await axios.get(`${API_URL}/products/show/${id}`);
-    return response.data;
-  },
-
-  async createProduct(productData) {
-    const response = await axios.post(`${API_URL}/products/create`, productData);
-    return response.data;
-  },
-
-  async updateProduct(id, productData) {
-    const response = await axios.put(`${API_URL}/products/edit/${id}`, productData);
-    return response.data;
-  },
-
-  async deleteProduct(id) {
-    const response = await axios.delete(`${API_URL}/products/delete/${id}`);
-    return response.data;
-  },
-
-  // Order management
+  }
+  
+  // Obtener pedidos
   async getOrders(page = 1, limit = 10, status = null, userId = null, startDate = null, endDate = null) {
     let url = `${API_URL}/orders/admin/list?page=${page}&limit=${limit}`;
     
@@ -90,37 +59,19 @@ const adminService = {
     
     const response = await axios.get(url);
     return response.data;
-  },
-
-  async updateOrderStatus(orderId, status) {
-    const response = await axios.put(`${API_URL}/orders/update/${orderId}/status`, { status });
-    return response.data;
-  },
-
-  // Statistics
-  async getUserStatistics(startDate = null, endDate = null) {
-    let url = `${API_URL}/admin/statistics`;
-    const params = [];
+  }
+  
+  // Obtener productos
+  async getProducts(page = 1, limit = 10, search = '', categoryId = null, startDate = null, endDate = null) {
+    let url = `${API_URL}/products/list?page=${page}&limit=${limit}`;
     
-    if (startDate) {
-      params.push(`start_date=${startDate}`);
+    if (search) {
+      url += `&search=${encodeURIComponent(search)}`;
     }
     
-    if (endDate) {
-      params.push(`end_date=${endDate}`);
+    if (categoryId) {
+      url += `&category=${categoryId}`;
     }
-    
-    if (params.length > 0) {
-      url += `?${params.join('&')}`;
-    }
-    
-    const response = await axios.get(url);
-    return response.data;
-  },
-
-  // Obtener productos populares
-  async getPopularProducts(limit = 5, startDate = null, endDate = null) {
-    let url = `${API_URL}/products/popular?limit=${limit}`;
     
     if (startDate) {
       url += `&start_date=${startDate}`;
@@ -132,50 +83,31 @@ const adminService = {
     
     const response = await axios.get(url);
     return response.data;
-  },
-
-  // Custom statistics for admin dashboard - Optimized version
+  }
+  
+  // Obtener estadísticas del dashboard en una sola llamada
   async getDashboardStats(startDate = null, endDate = null) {
     try {
-      // Define un valor para limit si no está disponible en este contexto
-      const limit = 5;
+      let url = `${API_URL}/admin/dashboard`;
       
-      // Make requests in parallel and use timeout to prevent hanging requests
-      const promises = [
-        this.getUserStatistics(startDate, endDate),
-        this.getPopularProducts(limit, startDate, endDate), // Eliminamos el parámetro useRatio
-        this.getOrders(1, limit, null, null, startDate, endDate),
-        this.getProducts(1, 10, '', null, startDate, endDate)
-      ];
-      
-      const [usersStats, popularProducts, orders, productsData] = await Promise.all(promises);
-      
-      return {
-        users: {
-          total: usersStats.statistics.totalUsers,
-          totalAdmins: usersStats.statistics.totalAdmins,
-        },
-        popularProducts: popularProducts.products,
-        recentOrders: orders.orders,
-        totalProducts: productsData.pagination.total,
-        totalSales: orders.totalSales || 0,
-        totalOrders: orders.totalOrders || 0,
-        dateRange: {
-          startDate: usersStats.statistics.startDate,
-          endDate: usersStats.statistics.endDate
+      if (startDate || endDate) {
+        url += '?';
+        if (startDate) {
+          url += `start_date=${startDate}`;
         }
-      };
+        if (endDate) {
+          url += startDate ? `&end_date=${endDate}` : `end_date=${endDate}`;
+        }
+      }
+      
+      const response = await axios.get(url);
+      return response.data;
     } catch (error) {
       console.error('Error fetching dashboard stats:', error);
       throw error;
     }
   }
-};
+}
 
-export default adminService;
-
-
-
-
-
+export default new AdminService();
 

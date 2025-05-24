@@ -132,7 +132,9 @@ class OrderRepository extends ServiceEntityRepository
     public function calculateTotalSalesInDateRange(?\DateTimeInterface $startDate = null, ?\DateTimeInterface $endDate = null): float
     {
         $qb = $this->createQueryBuilder('o')
-            ->select('SUM(o.totalAmount)');
+            ->select('SUM(o.totalAmount)')
+            ->where('o.status != :cancelledStatus')
+            ->setParameter('cancelledStatus', 'CANCELLED');
         
         if ($startDate !== null) {
             $qb->andWhere('o.createdAt >= :startDate')
@@ -145,8 +147,85 @@ class OrderRepository extends ServiceEntityRepository
         }
         
         $result = $qb->getQuery()->getSingleScalarResult();
+        
         return $result ? (float) $result : 0.0;
     }
+
+    /**
+     * Encuentra órdenes aplicando múltiples filtros
+     */
+    public function findByFilters(
+        ?string $status = null, 
+        ?int $userId = null, 
+        ?\DateTimeInterface $startDate = null, 
+        ?\DateTimeInterface $endDate = null, 
+        int $limit = 10, 
+        int $offset = 0
+    ): array {
+        $qb = $this->createQueryBuilder('o')
+            ->orderBy('o.createdAt', 'DESC')
+            ->setMaxResults($limit)
+            ->setFirstResult($offset);
+        
+        if ($status !== null) {
+            $qb->andWhere('o.status = :status')
+               ->setParameter('status', $status);
+        }
+        
+        if ($userId !== null) {
+            $qb->andWhere('o.user = :userId')
+               ->setParameter('userId', $userId);
+        }
+        
+        if ($startDate !== null) {
+            $qb->andWhere('o.createdAt >= :startDate')
+               ->setParameter('startDate', $startDate);
+        }
+        
+        if ($endDate !== null) {
+            $qb->andWhere('o.createdAt <= :endDate')
+               ->setParameter('endDate', $endDate);
+        }
+        
+        return $qb->getQuery()->getResult();
+    }
+
+    /**
+     * Cuenta órdenes aplicando múltiples filtros
+     */
+    public function countByFilters(
+        ?string $status = null, 
+        ?int $userId = null, 
+        ?\DateTimeInterface $startDate = null, 
+        ?\DateTimeInterface $endDate = null
+    ): int {
+        $qb = $this->createQueryBuilder('o')
+            ->select('COUNT(o.id)');
+        
+        if ($status !== null) {
+            $qb->andWhere('o.status = :status')
+               ->setParameter('status', $status);
+        }
+        
+        if ($userId !== null) {
+            $qb->andWhere('o.user = :userId')
+               ->setParameter('userId', $userId);
+        }
+        
+        if ($startDate !== null) {
+            $qb->andWhere('o.createdAt >= :startDate')
+               ->setParameter('startDate', $startDate);
+        }
+        
+        if ($endDate !== null) {
+            $qb->andWhere('o.createdAt <= :endDate')
+               ->setParameter('endDate', $endDate);
+        }
+        
+        return (int) $qb->getQuery()->getSingleScalarResult();
+    }
 }
+
+
 
 
