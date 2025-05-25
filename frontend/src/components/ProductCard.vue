@@ -4,6 +4,7 @@ import axios from 'axios';
 import { useAuthStore } from '@/router/auth';
 import { useRouter } from 'vue-router';
 import cartService from '@/services/cartService';
+import imageService from '@/services/imageService';
 
 const props = defineProps({
   product: {
@@ -62,15 +63,7 @@ const handleImageError = () => {
 
 // Función para obtener la URL de la imagen
 const getImageUrl = (imagePath) => {
-  if (!imagePath) return null;
-  
-  try {
-    // Intentar importar la imagen desde assets
-    return new URL(`../assets/images/${imagePath}`, import.meta.url).href;
-  } catch (error) {
-    console.error('Error loading image:', error);
-    return null;
-  }
+  return imageService.getImageUrl(imagePath);
 };
 </script>
 
@@ -197,6 +190,7 @@ const getImageUrl = (imagePath) => {
   background-color: #4a9a2e; /* Verde más claro al pasar el cursor */
 }
 </style>
+
 
 
 

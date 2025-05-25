@@ -86,6 +86,7 @@ import axios from 'axios';
 import { useAuthStore } from '@/router/auth';
 import cartService from '@/services/cartService';
 import LoadingSpinner from '@/components/LoadingSpinner.vue';
+import imageService from '@/services/imageService';
 
 const route = useRoute();
 const router = useRouter();
@@ -152,15 +153,7 @@ const handleImageError = () => {
 
 // Función para obtener la URL de la imagen
 const getImageUrl = (imagePath) => {
-  if (!imagePath) return null;
-  
-  try {
-    // Intentar importar la imagen desde assets
-    return new URL(`../assets/images/${imagePath}`, import.meta.url).href;
-  } catch (error) {
-    console.error('Error loading image:', error);
-    return null;
-  }
+  return imageService.getImageUrl(imagePath);
 };
 
 // Cargar datos al montar el componente
@@ -355,6 +348,7 @@ onMounted(() => {
   background-color: #4a9a2e;
 }
 </style>
+
 
 
 

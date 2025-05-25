@@ -62,10 +62,11 @@
               <div class="product-image">
                 <img
                   v-if="product.image_path"
-                  :src="product.image_path"
+                  :src="getImageUrl(product.image_path)"
                   :alt="product.name"
+                  @error="$event.target.style.display = 'none'; $event.target.nextElementSibling.style.display = 'flex'"
                 >
-                <div v-else class="product-image-placeholder"></div>
+                <div v-else class="product-image-placeholder">🛒</div>
               </div>
             </td>
             <td>{{ product.name }}</td>
@@ -215,6 +216,7 @@
 import { ref, computed, onMounted } from 'vue';
 import adminService from '@/services/adminService';
 import LoadingSpinner from '@/components/LoadingSpinner.vue';
+import imageService from '@/services/imageService';
 
 // Estado para la lista de productos
 const products = ref([]);
@@ -245,6 +247,11 @@ const showEditProductModal = ref(false);
 const showDeleteModal = ref(false);
 const productToEdit = ref(null);
 const productToDelete = ref(null);
+
+// Función para obtener la URL de la imagen
+const getImageUrl = (imagePath) => {
+  return imageService.getImageUrl(imagePath);
+};
 
 // Calcular array de páginas para la paginación
 const pagesArray = computed(() => {
@@ -365,6 +372,15 @@ const editProduct = (product) => {
 // Actualizar producto
 const updateProduct = async () => {
   try {
+    // Verificar que tenemos un producto para editar
+    if (!productToEdit.value) {
+      console.error('No hay producto seleccionado para editar');
+      return;
+    }
+    
+    // Mostrar indicador de carga
+    loading.value = true;
+    
     await adminService.updateProduct(productToEdit.value.id, {
       name: productForm.value.name,
       description: productForm.value.description,
@@ -374,12 +390,21 @@ const updateProduct = async () => {
       image_path: productForm.value.image_path
     });
     
+    // Cerrar modal y resetear formulario
     showEditProductModal.value = false;
     resetProductForm();
-    fetchProducts(currentPage.value);
+    
+    // Recargar la lista de productos para mostrar los cambios
+    await fetchProducts(currentPage.value);
+    
+    // Mostrar mensaje de éxito (opcional)
+    alert('Producto actualizado correctamente');
   } catch (err) {
     console.error('Error al actualizar producto:', err);
+    error.value = 'Error al actualizar el producto: ' + (err.response?.data?.error || err.message);
     alert('Error al actualizar el producto: ' + (err.response?.data?.error || err.message));
+  } finally {
+    loading.value = false;
   }
 };
 

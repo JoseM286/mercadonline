@@ -3,61 +3,8 @@ import axios from 'axios';
 const API_URL = import.meta.env.VITE_API_URL;
 
 class AdminService {
-  // Obtener estadísticas de usuarios
-  async getUserStatistics(startDate = null, endDate = null) {
-    let url = `${API_URL}/admin/statistics`;
-    
-    if (startDate || endDate) {
-      url += '?';
-      if (startDate) {
-        url += `start_date=${startDate}`;
-      }
-      if (endDate) {
-        url += startDate ? `&end_date=${endDate}` : `end_date=${endDate}`;
-      }
-    }
-    
-    const response = await axios.get(url);
-    return response.data;
-  }
-  
-  // Obtener productos populares
-  async getPopularProducts(limit = 5, startDate = null, endDate = null) {
-    let url = `${API_URL}/products/popular?limit=${limit}`;
-    
-    if (startDate) {
-      url += `&start_date=${startDate}`;
-    }
-    
-    if (endDate) {
-      url += `&end_date=${endDate}`;
-    }
-    
-    const response = await axios.get(url);
-    return response.data;
-  }
-  
-  // Obtener pedidos con filtros
-  async getOrders(page = 1, limit = 10, search = null, status = null, startDate = null, endDate = null) {
-    try {
-      // Corregir la URL para que coincida con la ruta definida en el backend
-      let url = `${API_URL}/admin/orders?page=${page}&limit=${limit}`;
-      
-      if (search) url += `&search=${encodeURIComponent(search)}`;
-      if (status) url += `&status=${encodeURIComponent(status)}`;
-      if (startDate) url += `&startDate=${encodeURIComponent(startDate)}`;
-      if (endDate) url += `&endDate=${encodeURIComponent(endDate)}`;
-      
-      const response = await axios.get(url);
-      return response.data;
-    } catch (error) {
-      console.error('Error fetching orders:', error);
-      throw error;
-    }
-  }
-  
   // Obtener productos
-  async getProducts(page = 1, limit = 10, search = '', categoryId = null, startDate = null, endDate = null) {
+  async getProducts(page = 1, limit = 10, search = '', categoryId = null) {
     let url = `${API_URL}/products/list?page=${page}&limit=${limit}`;
     
     if (search) {
@@ -68,6 +15,55 @@ class AdminService {
       url += `&category=${categoryId}`;
     }
     
+    const response = await axios.get(url);
+    return response.data;
+  }
+  
+  // Crear un nuevo producto
+  async createProduct(productData) {
+    try {
+      const response = await axios.post(`${API_URL}/products/create`, productData);
+      return response.data;
+    } catch (error) {
+      console.error('Error creating product:', error);
+      throw error;
+    }
+  }
+  
+  // Actualizar un producto existente
+  async updateProduct(productId, productData) {
+    try {
+      const response = await axios.put(`${API_URL}/products/edit/${productId}`, productData);
+      return response.data;
+    } catch (error) {
+      console.error('Error updating product:', error);
+      throw error;
+    }
+  }
+  
+  // Eliminar un producto
+  async deleteProduct(productId) {
+    try {
+      const response = await axios.delete(`${API_URL}/products/delete/${productId}`);
+      return response.data;
+    } catch (error) {
+      console.error('Error deleting product:', error);
+      throw error;
+    }
+  }
+  
+  // Obtener pedidos
+  async getOrders(page = 1, limit = 10, search = null, status = null, startDate = null, endDate = null) {
+    let url = `${API_URL}/admin/orders?page=${page}&limit=${limit}`;
+    
+    if (search) {
+      url += `&search=${encodeURIComponent(search)}`;
+    }
+    
+    if (status) {
+      url += `&status=${status}`;
+    }
+    
     if (startDate) {
       url += `&start_date=${startDate}`;
     }
@@ -80,29 +76,6 @@ class AdminService {
     return response.data;
   }
   
-  // Obtener estadísticas del dashboard en una sola llamada
-  async getDashboardStats(startDate = null, endDate = null) {
-    try {
-      let url = `${API_URL}/admin/dashboard`;
-      
-      if (startDate || endDate) {
-        url += '?';
-        if (startDate) {
-          url += `start_date=${startDate}`;
-        }
-        if (endDate) {
-          url += startDate ? `&end_date=${endDate}` : `end_date=${endDate}`;
-        }
-      }
-      
-      const response = await axios.get(url);
-      return response.data;
-    } catch (error) {
-      console.error('Error fetching dashboard stats:', error);
-      throw error;
-    }
-  }
-
   // Actualizar estado de un pedido
   async updateOrderStatus(orderId, newStatus) {
     try {
@@ -115,7 +88,7 @@ class AdminService {
       throw error;
     }
   }
-
+  
   // Eliminar un pedido
   async deleteOrder(orderId) {
     try {
@@ -126,7 +99,7 @@ class AdminService {
       throw error;
     }
   }
-
+  
   // Obtener usuarios
   async getUsers() {
     try {
@@ -137,11 +110,42 @@ class AdminService {
       throw error;
     }
   }
+  
+  // Cambiar rol de usuario
+  async changeUserRole(userId, newRole) {
+    try {
+      const response = await axios.put(`${API_URL}/admin/users/${userId}/role`, {
+        role: newRole
+      });
+      return response.data;
+    } catch (error) {
+      console.error('Error changing user role:', error);
+      throw error;
+    }
+  }
+  
+  // Eliminar un usuario
+  async deleteUser(userId) {
+    try {
+      const response = await axios.delete(`${API_URL}/admin/users/${userId}`);
+      return response.data;
+    } catch (error) {
+      console.error('Error deleting user:', error);
+      throw error;
+    }
+  }
+  
+  // Obtener estadísticas
+  async getStats() {
+    try {
+      const response = await axios.get(`${API_URL}/admin/stats`);
+      return response.data;
+    } catch (error) {
+      console.error('Error fetching stats:', error);
+      throw error;
+    }
+  }
 }
 
 export default new AdminService();
-
-
-
-
 

@@ -3,6 +3,7 @@ import { ref, computed, onMounted } from 'vue';
 import axios from 'axios';
 import { useRouter } from 'vue-router';
 import LoadingSpinner from '@/components/LoadingSpinner.vue';
+import imageService from '@/services/imageService';
 
 const router = useRouter();
 const cartItems = ref([]);
@@ -87,21 +88,7 @@ const checkout = async () => {
 
 // Función para obtener la URL de la imagen
 const getImageUrl = (imagePath) => {
-  if (!imagePath) return null;
-  
-  try {
-    // Intentar importar la imagen desde assets
-    // Primero verificamos si la imagen ya es una URL completa
-    if (imagePath.startsWith('http')) {
-      return imagePath;
-    }
-    
-    // Si no es una URL completa, intentamos cargarla desde assets
-    return new URL(`../assets/images/${imagePath}`, import.meta.url).href;
-  } catch (error) {
-    console.error('Error loading image:', error, imagePath);
-    return null;
-  }
+  return imageService.getImageUrl(imagePath);
 };
 
 // Cargar datos al montar el componente
@@ -483,6 +470,7 @@ onMounted(() => {
   color: #2c5e1a;
 }
 </style>
+
 
 
 
