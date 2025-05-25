@@ -3,6 +3,7 @@ import { ref } from 'vue';
 import { useRouter } from 'vue-router';
 import { useAuthStore } from '@/router/auth';
 import authService from '@/services/authService';
+import LoadingSpinner from '@/components/LoadingSpinner.vue';
 
 // Router para redireccionar después del login
 const router = useRouter();
@@ -109,11 +110,12 @@ const handleSubmit = async () => {
 
       <div class="centered-container">
         <form @submit.prevent="handleSubmit" class="section-card-accent">
-          <!-- Overlay de carga con imagen GIF -->
-          <div v-if="formStatus.loading" class="loading-overlay">
-            <img src="@/assets/images/spinner.gif" alt="Cargando..." class="spinner-gif" />
-            <p>Iniciando sesión...</p>
-          </div>
+          <!-- Reemplazar el overlay de carga con el nuevo componente -->
+          <LoadingSpinner 
+            v-if="formStatus.loading" 
+            message="Iniciando sesión..." 
+            :overlay="true" 
+          />
           
           <!-- Mensaje de estado del formulario -->
           <div v-if="formStatus.message"
@@ -284,6 +286,7 @@ const handleSubmit = async () => {
   height: 80px;
 }
 </style>
+
 
 
 

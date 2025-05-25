@@ -42,10 +42,10 @@
       </p>
     </div>
     
-    <div v-if="loading" class="loading-container">
-      <div class="loading-spinner"></div>
-      <p>Cargando estadísticas...</p>
-    </div>
+    <LoadingSpinner 
+      v-if="loading" 
+      message="Cargando estadísticas..." 
+    />
     
     <div v-else-if="error" class="error-container">
       <p>{{ error }}</p>
@@ -145,6 +145,7 @@
 <script setup>
 import { ref, onMounted, computed } from 'vue';
 import adminService from '@/services/adminService';
+import LoadingSpinner from '@/components/LoadingSpinner.vue';
 
 const dashboardStats = ref({
   users: {
@@ -329,29 +330,6 @@ th {
 
 tr:hover {
   background-color: #f9f9f9;
-}
-
-.loading-container {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  min-height: 300px;
-}
-
-.loading-spinner {
-  border: 5px solid #f3f3f3;
-  border-top: 5px solid #3a7a23;
-  border-radius: 50%;
-  width: 50px;
-  height: 50px;
-  animation: spin 1s linear infinite;
-  margin-bottom: 1rem;
-}
-
-@keyframes spin {
-  0% { transform: rotate(0deg); }
-  100% { transform: rotate(360deg); }
 }
 
 .error-container {

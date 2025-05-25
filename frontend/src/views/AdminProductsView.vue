@@ -29,10 +29,10 @@
     </div>
     
     <!-- Spinner de carga -->
-    <div v-if="loading" class="loading-container">
-      <div class="loading-spinner"></div>
-      <p>Cargando productos...</p>
-    </div>
+    <LoadingSpinner 
+      v-if="loading" 
+      message="Cargando productos..." 
+    />
     
     <!-- Mensaje de error -->
     <div v-else-if="error" class="error-container">
@@ -214,6 +214,7 @@
 <script setup>
 import { ref, computed, onMounted } from 'vue';
 import adminService from '@/services/adminService';
+import LoadingSpinner from '@/components/LoadingSpinner.vue';
 
 // Estado para la lista de productos
 const products = ref([]);

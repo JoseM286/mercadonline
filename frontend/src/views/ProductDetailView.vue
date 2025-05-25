@@ -1,10 +1,10 @@
 <template>
   <div class="page-container">
-    <!-- Spinner de carga -->
-    <div v-if="loading" class="loading-container">
-      <img src="@/assets/images/spinner.gif" alt="Cargando..." class="spinner-gif" />
-      <p>Cargando detalles del producto...</p>
-    </div>
+    <!-- Reemplazar el spinner de carga con el nuevo componente -->
+    <LoadingSpinner 
+      v-if="loading" 
+      message="Cargando detalles del producto..." 
+    />
     
     <!-- Mensaje de error -->
     <div v-else-if="error" class="error-message">
@@ -84,6 +84,8 @@ import { ref, onMounted } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import axios from 'axios';
 import { useAuthStore } from '@/router/auth';
+import cartService from '@/services/cartService';
+import LoadingSpinner from '@/components/LoadingSpinner.vue';
 
 const route = useRoute();
 const router = useRouter();
@@ -130,16 +132,13 @@ const addToCart = async () => {
       return;
     }
     
-    // Enviar petición al backend
-    const response = await axios.post(`${import.meta.env.VITE_API_URL}/cart/add`, {
-      product_id: productId,
-      quantity: quantity.value
-    });
+    // Usar el servicio del carrito
+    const response = await cartService.addToCart(productId, quantity.value);
     
-    // Mostrar mensaje de éxito (puedes usar un modal si lo prefieres)
+    // Mostrar mensaje de éxito
     alert('Producto añadido al carrito correctamente');
     
-    console.log('Producto añadido al carrito:', response.data);
+    console.log('Producto añadido al carrito:', response);
   } catch (err) {
     console.error('Error al añadir al carrito:', err);
     error.value = 'Error al añadir el producto al carrito. Por favor, inténtalo de nuevo.';
@@ -356,4 +355,6 @@ onMounted(() => {
   background-color: #4a9a2e;
 }
 </style>
+
+
 

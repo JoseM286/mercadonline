@@ -5,6 +5,7 @@ import { useAuthStore } from '@/router/auth';
 import userService from '@/services/userService';
 import authService from '@/services/authService';
 import ModalFeedback from '@/components/ModalFeedback.vue';
+import LoadingSpinner from '@/components/LoadingSpinner.vue';
 
 const router = useRouter();
 const authStore = useAuthStore();
@@ -167,11 +168,12 @@ const updateProfile = async () => {
           <div class="section-card">
             <h2>Información Personal</h2>
 
-            <!-- Overlay de carga con imagen GIF -->
-            <div v-if="formStatus.loading" class="loading-overlay">
-              <img src="@/assets/images/spinner.gif" alt="Cargando..." class="spinner-gif" />
-              <p>Actualizando perfil...</p>
-            </div>
+            <!-- Reemplazar el overlay de carga con el nuevo componente -->
+            <LoadingSpinner 
+              v-if="formStatus.loading" 
+              message="Actualizando perfil..." 
+              :overlay="true" 
+            />
 
             <!-- Mensaje de error (mantenemos solo este) -->
             <div v-if="formStatus.isError" class="status-message error-message">
@@ -413,6 +415,7 @@ const updateProfile = async () => {
   height: 80px;
 }
 </style>
+
 
 
 

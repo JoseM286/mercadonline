@@ -2,6 +2,7 @@
 import { ref, computed, onMounted } from 'vue';
 import axios from 'axios';
 import { useRouter } from 'vue-router';
+import LoadingSpinner from '@/components/LoadingSpinner.vue';
 
 const router = useRouter();
 const cartItems = ref([]);
@@ -117,10 +118,11 @@ onMounted(() => {
     </div>
 
     <div class="page-content">
-      <!-- Spinner de carga -->
-      <div v-if="loading" class="loading-container">
-        <img src="@/assets/images/spinner.gif" alt="Cargando..." class="spinner-gif" />
-      </div>
+      <!-- Reemplazar el spinner de carga con el nuevo componente -->
+      <LoadingSpinner 
+        v-if="loading" 
+        message="Cargando carrito..." 
+      />
       
       <!-- Mensaje de error -->
       <div v-else-if="error" class="error-message">
@@ -481,6 +483,7 @@ onMounted(() => {
   color: #2c5e1a;
 }
 </style>
+
 
 
 

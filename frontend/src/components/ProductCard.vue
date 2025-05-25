@@ -3,6 +3,7 @@ import { ref } from 'vue';
 import axios from 'axios';
 import { useAuthStore } from '@/router/auth';
 import { useRouter } from 'vue-router';
+import cartService from '@/services/cartService';
 
 const props = defineProps({
   product: {
@@ -40,13 +41,10 @@ const addToCart = async (event) => {
     
     console.log('Enviando producto al carrito:', props.product.id);
     
-    // Enviar petición al backend
-    const response = await axios.post(`${import.meta.env.VITE_API_URL}/cart/add`, {
-      product_id: props.product.id,
-      quantity: 1 // Por defecto añadimos 1 unidad desde la tarjeta
-    });
+    // Usar el servicio del carrito para añadir el producto
+    const response = await cartService.addToCart(props.product.id, 1);
     
-    console.log('Respuesta al añadir al carrito:', response.data);
+    console.log('Respuesta al añadir al carrito:', response);
     
     // Mostrar mensaje de éxito
     alert('Producto añadido al carrito correctamente');
@@ -199,6 +197,7 @@ const getImageUrl = (imagePath) => {
   background-color: #4a9a2e; /* Verde más claro al pasar el cursor */
 }
 </style>
+
 
 
 

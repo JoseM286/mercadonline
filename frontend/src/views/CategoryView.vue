@@ -3,6 +3,7 @@ import { ref, onMounted, watch } from 'vue';
 import { useRoute } from 'vue-router';
 import ProductCard from '@/components/ProductCard.vue';
 import axios from 'axios';
+import LoadingSpinner from '@/components/LoadingSpinner.vue';
 
 const route = useRoute();
 const categoryId = ref(route.params.id);
@@ -63,11 +64,11 @@ watch(() => route.params.id, (newId) => {
     <section>
       <h1 class="section-title">{{ categoryName }}</h1>
       
-      <!-- Spinner de carga -->
-      <div v-if="loading" class="loading-container">
-        <img src="@/assets/images/spinner.gif" alt="Cargando..." class="spinner-gif" />
-        <p>Cargando productos...</p>
-      </div>
+      <!-- Reemplazar el spinner de carga con el nuevo componente -->
+      <LoadingSpinner 
+        v-if="loading" 
+        message="Cargando productos..." 
+      />
       
       <!-- Mensaje de error -->
       <div v-else-if="error" class="error-message">

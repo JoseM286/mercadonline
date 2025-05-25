@@ -3,6 +3,7 @@ import { ref, onMounted, watch } from 'vue';
 import { useRoute } from 'vue-router';
 import ProductCard from '@/components/ProductCard.vue';
 import axios from 'axios';
+import LoadingSpinner from '@/components/LoadingSpinner.vue';
 
 const route = useRoute();
 const searchQuery = ref(route.query.search || '');
@@ -81,11 +82,11 @@ const changePage = (page) => {
         </span>
       </h1>
       
-      <!-- Spinner de carga -->
-      <div v-if="loading" class="loading-container">
-        <img src="@/assets/images/spinner.gif" alt="Cargando..." class="spinner-gif" />
-        <p>Buscando productos...</p>
-      </div>
+      <!-- Reemplazar el spinner de carga con el nuevo componente -->
+      <LoadingSpinner 
+        v-if="loading" 
+        message="Buscando productos..." 
+      />
       
       <!-- Mensaje de error -->
       <div v-else-if="error" class="error-message">

@@ -2,6 +2,7 @@
 import { ref, onMounted } from 'vue';
 import ProductCard from '@/components/ProductCard.vue';
 import axios from 'axios';
+import LoadingSpinner from '@/components/LoadingSpinner.vue';
 
 const popularProducts = ref([]);
 const loading = ref(true);
@@ -68,11 +69,11 @@ onMounted(() => {
     <section>
       <h1 class="section-title">Productos más vendidos</h1>
       
-      <!-- Spinner de carga -->
-      <div v-if="loading" class="loading-container">
-        <img src="@/assets/images/spinner.gif" alt="Cargando..." class="spinner-gif" />
-        <p>Cargando productos populares...</p>
-      </div>
+      <!-- Reemplazar el spinner de carga con el nuevo componente -->
+      <LoadingSpinner 
+        v-if="loading" 
+        message="Cargando productos populares..." 
+      />
       
       <!-- Mensaje de error -->
       <div v-else-if="error" class="error-message">
@@ -161,5 +162,6 @@ onMounted(() => {
   color: var(--color-text-light);
 }
 </style>
+
 
 

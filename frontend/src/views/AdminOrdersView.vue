@@ -40,10 +40,10 @@
     </div>
     
     <!-- Tabla de pedidos -->
-    <div v-if="loading" class="loading-container">
-      <div class="loading-spinner"></div>
-      <p>Cargando pedidos...</p>
-    </div>
+    <LoadingSpinner 
+      v-if="loading" 
+      message="Cargando pedidos..." 
+    />
     
     <div v-else-if="error" class="error-container">
       <h3>Error al cargar pedidos</h3>
@@ -173,6 +173,7 @@
 <script setup>
 import { ref, computed, onMounted } from 'vue';
 import adminService from '@/services/adminService';
+import LoadingSpinner from '@/components/LoadingSpinner.vue';
 
 // Estado para la lista de pedidos
 const orders = ref([]);
@@ -700,6 +701,7 @@ tr:hover {
   }
 }
 </style>
+
 
 
 
