@@ -178,13 +178,42 @@
           </div>
           
           <div class="form-group">
-            <label for="productImage">URL de imagen:</label>
-            <input
-              id="productImage"
-              v-model="productForm.image_path"
-              type="text"
-              placeholder="https://..."
-            >
+            <label for="productImage">Imagen del producto:</label>
+            <div class="image-upload-container">
+              <!-- Previsualización de la imagen -->
+              <div v-if="imagePreview" class="image-preview">
+                <img :src="imagePreview" alt="Vista previa" />
+                <button type="button" class="btn-remove-image" @click="removeImage">×</button>
+              </div>
+              
+              <!-- Input para URL de imagen -->
+              <input
+                id="productImageUrl"
+                v-model="productForm.image_path"
+                type="text"
+                placeholder="https://... o nombre del archivo"
+                :disabled="imageFile !== null"
+              >
+              
+              <!-- O separador -->
+              <div class="separator">
+                <span>O</span>
+              </div>
+              
+              <!-- Input para subir archivo -->
+              <div class="file-input-container">
+                <input
+                  id="productImageFile"
+                  type="file"
+                  accept="image/*"
+                  @change="handleImageUpload"
+                  ref="fileInput"
+                >
+                <label for="productImageFile" class="btn-file-upload">
+                  Seleccionar archivo
+                </label>
+              </div>
+            </div>
           </div>
           
           <div class="form-actions">
@@ -247,6 +276,76 @@ const showEditProductModal = ref(false);
 const showDeleteModal = ref(false);
 const productToEdit = ref(null);
 const productToDelete = ref(null);
+
+// Estado para la carga de imágenes
+const imageFile = ref(null);
+const imagePreview = ref(null);
+const fileInput = ref(null);
+
+// Función para manejar la carga de imágenes
+const handleImageUpload = (event) => {
+  const file = event.target.files[0];
+  if (!file) return;
+  
+  // Validar que sea una imagen
+  if (!file.type.match('image.*')) {
+    alert('Por favor, selecciona un archivo de imagen válido');
+    return;
+  }
+  
+  // Guardar el archivo
+  imageFile.value = file;
+  
+  // Crear URL para previsualización
+  imagePreview.value = URL.createObjectURL(file);
+  
+  // Limpiar el campo de URL de imagen
+  productForm.value.image_path = '';
+};
+
+// Función para eliminar la imagen seleccionada
+const removeImage = () => {
+  imageFile.value = null;
+  imagePreview.value = null;
+  if (fileInput.value) {
+    fileInput.value.value = '';
+  }
+};
+
+// Función para subir la imagen al servidor
+const uploadImage = async () => {
+  if (!imageFile.value) return null;
+  
+  try {
+    console.log('Preparando imagen para subir:', imageFile.value.name);
+    
+    const formData = new FormData();
+    formData.append('image', imageFile.value);
+    
+    console.log('Enviando imagen al servidor...');
+    const response = await imageService.uploadImage(formData);
+    
+    if (!response.success || !response.imagePath) {
+      throw new Error('La respuesta del servidor no contiene la ruta de la imagen');
+    }
+    
+    console.log('Imagen subida correctamente:', response.imagePath);
+    return response.imagePath;
+  } catch (error) {
+    console.error('Error al subir la imagen:', error);
+    
+    // Mostrar un mensaje de error más descriptivo
+    let errorMessage = 'No se pudo subir la imagen.';
+    
+    if (error.response && error.response.data && error.response.data.error) {
+      errorMessage += ' ' + error.response.data.error;
+    } else if (error.message) {
+      errorMessage += ' ' + error.message;
+    }
+    
+    throw new Error(errorMessage);
+  }
+};
 
 // Función para obtener la URL de la imagen
 const getImageUrl = (imagePath) => {
@@ -337,21 +436,32 @@ const resetFilters = () => {
 // Crear producto
 const createProduct = async () => {
   try {
+    loading.value = true;
+    
+    // Si hay una imagen seleccionada, subirla primero
+    let imagePath = productForm.value.image_path;
+    if (imageFile.value) {
+      imagePath = await uploadImage();
+    }
+    
     await adminService.createProduct({
       name: productForm.value.name,
       description: productForm.value.description,
       price: parseFloat(productForm.value.price),
       stock: parseInt(productForm.value.stock),
       category_id: parseInt(productForm.value.category_id),
-      image_path: productForm.value.image_path
+      image_path: imagePath
     });
     
     showAddProductModal.value = false;
     resetProductForm();
     fetchProducts(currentPage.value);
+    alert('Producto creado correctamente');
   } catch (err) {
     console.error('Error al crear producto:', err);
     alert('Error al crear el producto: ' + (err.response?.data?.error || err.message));
+  } finally {
+    loading.value = false;
   }
 };
 
@@ -372,14 +482,18 @@ const editProduct = (product) => {
 // Actualizar producto
 const updateProduct = async () => {
   try {
-    // Verificar que tenemos un producto para editar
     if (!productToEdit.value) {
       console.error('No hay producto seleccionado para editar');
       return;
     }
     
-    // Mostrar indicador de carga
     loading.value = true;
+    
+    // Si hay una imagen seleccionada, subirla primero
+    let imagePath = productForm.value.image_path;
+    if (imageFile.value) {
+      imagePath = await uploadImage();
+    }
     
     await adminService.updateProduct(productToEdit.value.id, {
       name: productForm.value.name,
@@ -387,17 +501,12 @@ const updateProduct = async () => {
       price: parseFloat(productForm.value.price),
       stock: parseInt(productForm.value.stock),
       category_id: parseInt(productForm.value.category_id),
-      image_path: productForm.value.image_path
+      image_path: imagePath
     });
     
-    // Cerrar modal y resetear formulario
     showEditProductModal.value = false;
     resetProductForm();
-    
-    // Recargar la lista de productos para mostrar los cambios
     await fetchProducts(currentPage.value);
-    
-    // Mostrar mensaje de éxito (opcional)
     alert('Producto actualizado correctamente');
   } catch (err) {
     console.error('Error al actualizar producto:', err);
@@ -444,6 +553,11 @@ const resetProductForm = () => {
     image_path: ''
   };
   productToEdit.value = null;
+  imageFile.value = null;
+  imagePreview.value = null;
+  if (fileInput.value) {
+    fileInput.value.value = '';
+  }
 };
 
 // Cargar productos cuando se monte el componente
@@ -740,6 +854,97 @@ tr:hover {
   display: flex;
   justify-content: flex-end;
   margin-top: 2rem;
+}
+
+.image-upload-container {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.image-preview {
+  position: relative;
+  width: 150px;
+  height: 150px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  overflow: hidden;
+  margin-bottom: 1rem;
+}
+
+.image-preview img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+
+.btn-remove-image {
+  position: absolute;
+  top: 5px;
+  right: 5px;
+  width: 25px;
+  height: 25px;
+  border-radius: 50%;
+  background-color: rgba(255, 255, 255, 0.8);
+  border: 1px solid #ddd;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  font-size: 16px;
+  font-weight: bold;
+}
+
+.btn-remove-image:hover {
+  background-color: #d73c2c;
+}
+
+.separator {
+  display: flex;
+  align-items: center;
+  text-align: center;
+  margin: 1rem 0;
+}
+
+.separator::before,
+.separator::after {
+  content: '';
+  flex: 1;
+  border-bottom: 1px solid #ddd;
+}
+
+.separator span {
+  padding: 0 10px;
+  color: #666;
+  font-size: 0.9rem;
+}
+
+.file-input-container {
+  position: relative;
+}
+
+.file-input-container input[type="file"] {
+  position: absolute;
+  width: 0.1px;
+  height: 0.1px;
+  opacity: 0;
+  overflow: hidden;
+  z-index: -1;
+}
+
+.btn-file-upload {
+  display: inline-block;
+  padding: 0.75rem 1rem;
+  background-color: #4a90e2;
+  color: white;
+  border-radius: 4px;
+  cursor: pointer;
+  font-weight: bold;
+  text-align: center;
+}
+
+.btn-file-upload:hover {
+  background-color: #3a80d2;
 }
 
 @media (max-width: 768px) {

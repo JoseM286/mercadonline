@@ -1,3 +1,7 @@
+import axios from 'axios';
+
+const API_URL = import.meta.env.VITE_API_URL;
+
 /**
  * Servicio para manejar imágenes en la aplicación
  */
@@ -39,6 +43,44 @@ class ImageService {
       img.src = url;
     });
   }
+  
+  /**
+   * Sube una imagen al servidor
+   * @param {FormData} formData - FormData con la imagen a subir
+   * @returns {Promise<Object>} - Promise con la respuesta del servidor
+   */
+  async uploadImage(formData) {
+    try {
+      console.log('Intentando subir imagen al servidor...');
+      
+      const response = await axios.post(`${API_URL}/upload/image`, formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data'
+        }
+      });
+      
+      console.log('Respuesta del servidor:', response.data);
+      return response.data;
+    } catch (error) {
+      console.error('Error uploading image:', error);
+      
+      // Mostrar más detalles del error para depuración
+      if (error.response) {
+        // El servidor respondió con un código de estado fuera del rango 2xx
+        console.error('Respuesta del servidor:', error.response.data);
+        console.error('Código de estado:', error.response.status);
+      } else if (error.request) {
+        // La petición fue hecha pero no se recibió respuesta
+        console.error('No se recibió respuesta del servidor');
+      } else {
+        // Algo ocurrió al configurar la petición
+        console.error('Error de configuración:', error.message);
+      }
+      
+      throw error;
+    }
+  }
 }
 
 export default new ImageService();
+
