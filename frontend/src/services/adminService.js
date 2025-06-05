@@ -145,6 +145,28 @@ class AdminService {
       throw error;
     }
   }
+
+  // Obtener estadísticas del dashboard
+  async getDashboardStats(startDate = null, endDate = null) {
+    try {
+      let url = `${API_URL}/admin/dashboard`;
+      const params = new URLSearchParams();
+      if (startDate) {
+        params.append('start_date', startDate);
+      }
+      if (endDate) {
+        params.append('end_date', endDate);
+      }
+      if (params.toString()) {
+        url += `?${params.toString()}`;
+      }
+      const response = await axios.get(url);
+      return response.data;
+    } catch (error) {
+      console.error('Error fetching dashboard stats:', error);
+      throw error;
+    }
+  }
 }
 
 export default new AdminService();
