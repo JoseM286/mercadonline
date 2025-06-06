@@ -49,7 +49,7 @@ class AdminController extends AbstractController
         return $this->json(['users' => $usersData]);
     }
 
-#[Route('/users/{id}/role', name: 'app_admin_change_user_role', methods: ['PUT'])]
+    #[Route('/users/{id}/role', name: 'app_admin_change_user_role', methods: ['PUT'])]
     public function changeUserRole(Request $request, int $id): JsonResponse
     {
         try {
@@ -66,13 +66,33 @@ class AdminController extends AbstractController
                 return $this->json(['error' => 'Invalid role specified'], Response::HTTP_BAD_REQUEST);
             }
 
-            $user->setRoles([$newRole]);
+            $user->setRole($newRole);
             $this->entityManager->flush();
 
             return $this->json(['message' => 'User role updated successfully']);
         } catch (\Exception $e) {
             return $this->json([
                 'error' => 'Error updating user role: ' . $e->getMessage()
+            ], Response::HTTP_INTERNAL_SERVER_ERROR);
+        }
+    }
+    #[Route('/users/{id}', name: 'app_admin_delete_user', methods: ['DELETE'])]
+    public function deleteUser(int $id): JsonResponse
+    {
+        try {
+            $user = $this->userRepository->find($id);
+
+            if (!$user) {
+                return $this->json(['error' => 'User not found'], Response::HTTP_NOT_FOUND);
+            }
+
+            $this->entityManager->remove($user);
+            $this->entityManager->flush();
+
+            return $this->json(['message' => 'User deleted successfully']);
+        } catch (\Exception $e) {
+            return $this->json([
+                'error' => 'Error deleting user: ' . $e->getMessage()
             ], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
