@@ -20,7 +20,7 @@ use Symfony\Component\Security\Http\Attribute\IsGranted;
 class AdminController extends AbstractController
 {
     use DateFilterTrait;
-    
+
     public function __construct(
         private UserRepository $userRepository,
         private ProductRepository $productRepository,
@@ -28,25 +28,54 @@ class AdminController extends AbstractController
         private EntityManagerInterface $entityManager
     ) {}
 
-    #[Route('/statistics', name: 'app_admin_user_statistics', methods: ['GET'])]
-    public function getUserStatistics(Request $request): JsonResponse
+    #[Route('/users', name: 'app_admin_users', methods: ['GET'])]
+    public function getUsers(): JsonResponse
     {
-        // Procesar filtros de fecha
-        $dateFilters = $this->processDateFilters($request);
-        if ($dateFilters['error']) {
-            return $this->createDateErrorResponse($dateFilters['error']);
+        $users = $this->userRepository->findAll();
+        $usersData = [];
+        foreach ($users as $user) {
+            $roles = $user->getRoles();
+            $createdAt = $user->getCreatedAt();
+
+            $usersData[] = [
+                'id' => $user->getId(),
+                'name' => $user->getName(),
+                'email' => $user->getEmail(),
+                'role' => !empty($roles) ? $roles[0] : 'ROLE_USER',
+                'createdAt' => $createdAt ? $createdAt->format('Y-m-d H:i:s') : null,
+            ];
         }
-        
-        $startDate = $dateFilters['startDate'];
-        $endDate = $dateFilters['endDate'];
-        
-        $statistics = $this->userRepository->getStatistics($startDate, $endDate);
-        
-        return $this->json([
-            'statistics' => $statistics
-        ]);
+
+        return $this->json(['users' => $usersData]);
     }
-    
+
+#[Route('/users/{id}/role', name: 'app_admin_change_user_role', methods: ['PUT'])]
+    public function changeUserRole(Request $request, int $id): JsonResponse
+    {
+        try {
+            $user = $this->userRepository->find($id);
+
+            if (!$user) {
+                return $this->json(['error' => 'User not found'], Response::HTTP_NOT_FOUND);
+            }
+
+            $data = json_decode($request->getContent(), true);
+            $newRole = $data['role'] ?? null;
+
+            if (!$newRole || !in_array($newRole, ['ROLE_USER', 'ROLE_ADMIN'])) {
+                return $this->json(['error' => 'Invalid role specified'], Response::HTTP_BAD_REQUEST);
+            }
+
+            $user->setRoles([$newRole]);
+            $this->entityManager->flush();
+
+            return $this->json(['message' => 'User role updated successfully']);
+        } catch (\Exception $e) {
+            return $this->json([
+                'error' => 'Error updating user role: ' . $e->getMessage()
+            ], Response::HTTP_INTERNAL_SERVER_ERROR);
+        }
+    }
     #[Route('/dashboard', name: 'app_admin_dashboard', methods: ['GET'])]
     public function getDashboardStats(Request $request): JsonResponse
     {
@@ -56,20 +85,20 @@ class AdminController extends AbstractController
             if ($dateFilters['error']) {
                 return $this->createDateErrorResponse($dateFilters['error']);
             }
-            
+
             $startDate = $dateFilters['startDate'];
             $endDate = $dateFilters['endDate'];
-            
+
             // Límite para productos populares y pedidos recientes
             $limit = min(10, $request->query->getInt('limit', 5));
-            
+
             // 1. Obtener estadísticas de usuarios
             $userStats = $this->userRepository->getStatistics($startDate, $endDate);
-            
+
             // 2. Obtener productos populares
             $popularProducts = $this->productRepository->findMostPopularProducts($limit, $startDate, $endDate);
             $popularProductsData = [];
-            
+
             foreach ($popularProducts as $product) {
                 $popularProductsData[] = [
                     'id' => $product->getId(),
@@ -85,7 +114,7 @@ class AdminController extends AbstractController
                     ]
                 ];
             }
-            
+
             // 3. Obtener pedidos recientes
             $recentOrders = $this->orderRepository->findByFilters(
                 null, // status
@@ -95,7 +124,7 @@ class AdminController extends AbstractController
                 $limit,
                 0 // offset
             );
-            
+
             $recentOrdersData = [];
             foreach ($recentOrders as $order) {
                 $recentOrdersData[] = [
@@ -113,14 +142,14 @@ class AdminController extends AbstractController
                     'items_count' => $order->getOrderItems()->count()
                 ];
             }
-            
+
             // 4. Obtener total de productos
             $totalProducts = $this->productRepository->countByDateRange($startDate, $endDate);
-            
+
             // 5. Obtener total de ventas y pedidos
             $totalSales = $this->orderRepository->calculateTotalSalesInDateRange($startDate, $endDate);
             $totalOrders = $this->orderRepository->countByFilters(null, null, $startDate, $endDate);
-            
+
             // Construir respuesta
             return $this->json([
                 'users' => [
@@ -152,11 +181,11 @@ class AdminController extends AbstractController
             $page = max(1, $request->query->getInt('page', 1));
             $limit = min(50, $request->query->getInt('limit', 10));
             $offset = ($page - 1) * $limit;
-            
+
             // Filtros
             $search = $request->query->get('search');
             $status = $request->query->get('status');
-            
+
             // Procesar filtros de fecha
             $dateFilters = $this->processDateFilters($request);
             if ($dateFilters['error']) {
@@ -164,17 +193,17 @@ class AdminController extends AbstractController
                     'error' => $dateFilters['error']
                 ], Response::HTTP_BAD_REQUEST);
             }
-            
+
             $startDate = $dateFilters['startDate'];
             $endDate = $dateFilters['endDate'];
-            
+
             // Construir consulta
             $queryBuilder = $this->entityManager->createQueryBuilder();
             $queryBuilder->select('o')
                 ->from(Order::class, 'o')
                 ->leftJoin('o.user', 'u')
                 ->orderBy('o.createdAt', 'DESC');
-            
+
             // Aplicar filtros
             if ($search) {
                 $queryBuilder->andWhere(
@@ -184,35 +213,35 @@ class AdminController extends AbstractController
                         $queryBuilder->expr()->like('u.email', ':search')
                     )
                 )
-                ->setParameter('search', '%' . $search . '%');
+                    ->setParameter('search', '%' . $search . '%');
             }
-            
+
             if ($status) {
                 $queryBuilder->andWhere('o.status = :status')
                     ->setParameter('status', strtoupper($status));
             }
-            
+
             if ($startDate) {
                 $queryBuilder->andWhere('o.createdAt >= :startDate')
                     ->setParameter('startDate', $startDate);
             }
-            
+
             if ($endDate) {
                 $queryBuilder->andWhere('o.createdAt <= :endDate')
                     ->setParameter('endDate', $endDate);
             }
-            
+
             // Contar total de resultados para paginación
             $totalQuery = clone $queryBuilder;
             $totalQuery->select('COUNT(o.id)');
             $total = $totalQuery->getQuery()->getSingleScalarResult();
-            
+
             // Aplicar paginación
             $queryBuilder->setFirstResult($offset)
                 ->setMaxResults($limit);
-            
+
             $orders = $queryBuilder->getQuery()->getResult();
-            
+
             // Formatear resultados
             $ordersData = [];
             foreach ($orders as $order) {
@@ -229,7 +258,7 @@ class AdminController extends AbstractController
                     'created_at' => $order->getCreatedAt()->format('Y-m-d H:i:s')
                 ];
             }
-            
+
             return $this->json([
                 'orders' => $ordersData,
                 'pagination' => [
@@ -246,4 +275,3 @@ class AdminController extends AbstractController
         }
     }
 }
-

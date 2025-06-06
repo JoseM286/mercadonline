@@ -35,7 +35,6 @@
           <label>Fecha hasta:</label>
           <input type="date" v-model="endDate" class="date-input" />
         </div>
-        <button @click="applyDateFilter" class="btn-apply">Aplicar filtro</button>
       </div>
     </div>
     

@@ -172,7 +172,7 @@ const fetchUsers = async () => {
   
   try {
     const response = await adminService.getUsers();
-    users.value = response.users;
+    users.value = response.users || [];
   } catch (err) {
     console.error('Error al obtener usuarios:', err);
     error.value = 'No se pudieron cargar los usuarios. Por favor, inténtalo de nuevo.';
