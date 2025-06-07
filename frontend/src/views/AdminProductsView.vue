@@ -61,10 +61,10 @@
             <td>
               <div class="product-image">
                 <img
-                  v-if="product.image_path"
+                  v-if="product.image_path && !imageErrorFlags[product.id]"
                   :src="getImageUrl(product.image_path)"
                   :alt="product.name"
-                  @error="$event.target.style.display = 'none'; $event.target.nextElementSibling.style.display = 'flex'"
+                  @error="handleImageError(product)"
                 >
                 <div v-else class="product-image-placeholder">🛒</div>
               </div>
@@ -178,42 +178,13 @@
           </div>
           
           <div class="form-group">
-            <label for="productImage">Imagen del producto:</label>
-            <div class="image-upload-container">
-              <!-- Previsualización de la imagen -->
-              <div v-if="imagePreview" class="image-preview">
-                <img :src="imagePreview" alt="Vista previa" />
-                <button type="button" class="btn-remove-image" @click="removeImage">×</button>
-              </div>
-              
-              <!-- Input para URL de imagen -->
-              <input
-                id="productImageUrl"
-                v-model="productForm.image_path"
-                type="text"
-                placeholder="https://... o nombre del archivo"
-                :disabled="imageFile !== null"
-              >
-              
-              <!-- O separador -->
-              <div class="separator">
-                <span>O</span>
-              </div>
-              
-              <!-- Input para subir archivo -->
-              <div class="file-input-container">
-                <input
-                  id="productImageFile"
-                  type="file"
-                  accept="image/*"
-                  @change="handleImageUpload"
-                  ref="fileInput"
-                >
-                <label for="productImageFile" class="btn-file-upload">
-                  Seleccionar archivo
-                </label>
-              </div>
-            </div>
+            <label for="productImage">URL de la Imagen:</label>
+            <input
+              id="productImage"
+              v-model="productForm.image_path"
+              type="text"
+              placeholder="https://example.com/image.png"
+            >
           </div>
           
           <div class="form-actions">
@@ -276,76 +247,8 @@ const showEditProductModal = ref(false);
 const showDeleteModal = ref(false);
 const productToEdit = ref(null);
 const productToDelete = ref(null);
+const imageErrorFlags = ref({});
 
-// Estado para la carga de imágenes
-const imageFile = ref(null);
-const imagePreview = ref(null);
-const fileInput = ref(null);
-
-// Función para manejar la carga de imágenes
-const handleImageUpload = (event) => {
-  const file = event.target.files[0];
-  if (!file) return;
-  
-  // Validar que sea una imagen
-  if (!file.type.match('image.*')) {
-    alert('Por favor, selecciona un archivo de imagen válido');
-    return;
-  }
-  
-  // Guardar el archivo
-  imageFile.value = file;
-  
-  // Crear URL para previsualización
-  imagePreview.value = URL.createObjectURL(file);
-  
-  // Limpiar el campo de URL de imagen
-  productForm.value.image_path = '';
-};
-
-// Función para eliminar la imagen seleccionada
-const removeImage = () => {
-  imageFile.value = null;
-  imagePreview.value = null;
-  if (fileInput.value) {
-    fileInput.value.value = '';
-  }
-};
-
-// Función para subir la imagen al servidor
-const uploadImage = async () => {
-  if (!imageFile.value) return null;
-  
-  try {
-    console.log('Preparando imagen para subir:', imageFile.value.name);
-    
-    const formData = new FormData();
-    formData.append('image', imageFile.value);
-    
-    console.log('Enviando imagen al servidor...');
-    const response = await imageService.uploadImage(formData);
-    
-    if (!response.success || !response.imagePath) {
-      throw new Error('La respuesta del servidor no contiene la ruta de la imagen');
-    }
-    
-    console.log('Imagen subida correctamente:', response.imagePath);
-    return response.imagePath;
-  } catch (error) {
-    console.error('Error al subir la imagen:', error);
-    
-    // Mostrar un mensaje de error más descriptivo
-    let errorMessage = 'No se pudo subir la imagen.';
-    
-    if (error.response && error.response.data && error.response.data.error) {
-      errorMessage += ' ' + error.response.data.error;
-    } else if (error.message) {
-      errorMessage += ' ' + error.message;
-    }
-    
-    throw new Error(errorMessage);
-  }
-};
 
 // Función para obtener la URL de la imagen
 const getImageUrl = (imagePath) => {
@@ -438,19 +341,13 @@ const createProduct = async () => {
   try {
     loading.value = true;
     
-    // Si hay una imagen seleccionada, subirla primero
-    let imagePath = productForm.value.image_path;
-    if (imageFile.value) {
-      imagePath = await uploadImage();
-    }
-    
     await adminService.createProduct({
       name: productForm.value.name,
       description: productForm.value.description,
       price: parseFloat(productForm.value.price),
       stock: parseInt(productForm.value.stock),
       category_id: parseInt(productForm.value.category_id),
-      image_path: imagePath
+      image_path: productForm.value.image_path
     });
     
     showAddProductModal.value = false;
@@ -489,19 +386,13 @@ const updateProduct = async () => {
     
     loading.value = true;
     
-    // Si hay una imagen seleccionada, subirla primero
-    let imagePath = productForm.value.image_path;
-    if (imageFile.value) {
-      imagePath = await uploadImage();
-    }
-    
     await adminService.updateProduct(productToEdit.value.id, {
       name: productForm.value.name,
       description: productForm.value.description,
       price: parseFloat(productForm.value.price),
       stock: parseInt(productForm.value.stock),
       category_id: parseInt(productForm.value.category_id),
-      image_path: imagePath
+      image_path: productForm.value.image_path
     });
     
     showEditProductModal.value = false;
@@ -535,6 +426,11 @@ const deleteProduct = async () => {
   }
 };
 
+// Manejar error de carga de imagen
+const handleImageError = (product) => {
+  imageErrorFlags.value[product.id] = true;
+};
+
 // Cerrar modales
 const closeModals = () => {
   showAddProductModal.value = false;
@@ -553,11 +449,6 @@ const resetProductForm = () => {
     image_path: ''
   };
   productToEdit.value = null;
-  imageFile.value = null;
-  imagePreview.value = null;
-  if (fileInput.value) {
-    fileInput.value.value = '';
-  }
 };
 
 // Cargar productos cuando se monte el componente
