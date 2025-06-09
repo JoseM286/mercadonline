@@ -377,8 +377,8 @@ const handleLogout = async () => {
   }
 
   .categories-list {
-    flex-wrap: nowrap;
-    justify-content: flex-start;
+    flex-wrap: wrap;
+    justify-content: center;
     gap: var(--spacing-md);
     padding-bottom: var(--spacing-xs);
   }
