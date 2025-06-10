@@ -143,7 +143,7 @@ onMounted(() => {
                     :alt="item.product.name"
                     @error="$event.target.style.display = 'none'; $event.target.nextElementSibling.style.display = 'flex'"
                   />
-                  <div v-else class="image-placeholder">🥕</div>
+                  <div v-else class="image-placeholder">🛒</div>
                 </div>
                 <div class="cart-item-details">
                   <h3>{{ item.product ? item.product.name : 'Producto' }}</h3>
